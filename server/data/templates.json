@@ -1,0 +1,38 @@
+[
+  {
+    "id": "template_1779362564194_959obfq",
+    "template_name": "Ctrl_Alt_Delusion_Final_Approval",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Ctrl_Alt_Delusion_Final_Approval.pdf",
+    "file_type": "pdf",
+    "width": 800,
+    "height": 600,
+    "thumbnail_path": null,
+    "is_active": true,
+    "uploaded_at": "2026-05-21T11:22:44.194Z",
+    "updated_at": "2026-05-21T11:22:44.194Z"
+  },
+  {
+    "id": "template_1779362625774_3l88wun",
+    "template_name": "Blank-Certificate-Of-Recognition",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\e1e90ad3-545c-4389-b209-faec1c714ac1.png",
+    "file_type": "png",
+    "width": 800,
+    "height": 600,
+    "thumbnail_path": null,
+    "is_active": true,
+    "uploaded_at": "2026-05-21T11:23:45.774Z",
+    "updated_at": "2026-05-21T11:23:45.774Z"
+  },
+  {
+    "id": "template_1779363032575_49575kj",
+    "template_name": "Blank-Certificate-Of-Recognition",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Blank-Certificate-Of-Recognition.jpg",
+    "file_type": "jpg",
+    "width": 800,
+    "height": 600,
+    "thumbnail_path": null,
+    "is_active": true,
+    "uploaded_at": "2026-05-21T11:30:32.575Z",
+    "updated_at": "2026-05-21T11:30:32.575Z"
+  }
+]

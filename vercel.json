@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/build",
+  "rewrites": [
+    { "source": "/api/mass-mail", "destination": "/api/mass-mail.js" },
+    { "source": "/api/mass-mail/(.*)", "destination": "/api/mass-mail.js" },
+    { "source": "/api/reports", "destination": "/api/reports.js" },
+    { "source": "/api/reports/(.*)", "destination": "/api/reports.js" },
+    { "source": "/api/certificates", "destination": "/api/certificates.js" },
+    { "source": "/api/certificates/(.*)", "destination": "/api/certificates.js" },
+    { "source": "/api/templates", "destination": "/api/templates.js" },
+    { "source": "/api/templates/(.*)", "destination": "/api/templates.js" },
+    { "source": "/api/participants", "destination": "/api/participants.js" },
+    { "source": "/api/participants/(.*)", "destination": "/api/participants.js" },
+    { "source": "/api/auth/(.*)", "destination": "/api/auth.js" },
+    { "source": "/api/health", "destination": "/api/health.js" },
+    { "source": "/((?!api/.*).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    }
+  ]
+}

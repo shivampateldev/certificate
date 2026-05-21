@@ -1,0 +1,39 @@
+{
+  "name": "certificate-management-platform",
+  "version": "2.0.0",
+  "description": "Certificate Management Platform with Mass Mailer",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm start",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "vercel-build": "cd client && npm install && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": [
+    "certificate",
+    "management",
+    "mass-mailer",
+    "react",
+    "nodejs"
+  ],
+  "author": "Certificate Management Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.91.0",
+    "adm-zip": "^0.5.16",
+    "bcryptjs": "^2.4.3",
+    "busboy": "^1.6.0",
+    "csv-parser": "^3.2.0",
+    "firebase": "^12.13.0",
+    "firebase-admin": "^13.10.0",
+    "form-data": "^4.0.5",
+    "googleapis": "^170.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.7"
+  }
+}

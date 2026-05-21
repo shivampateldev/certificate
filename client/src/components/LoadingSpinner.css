@@ -1,0 +1,112 @@
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+}
+
+.loading-spinner.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.spinner-circle {
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  position: relative;
+}
+
+/* Size variants */
+.loading-spinner.small .spinner-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-200);
+  border-top: 2px solid currentColor;
+}
+
+.loading-spinner.medium .spinner-circle {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--gray-200);
+  border-top: 4px solid currentColor;
+}
+
+.loading-spinner.large .spinner-circle {
+  width: 60px;
+  height: 60px;
+  border: 6px solid var(--gray-200);
+  border-top: 6px solid currentColor;
+}
+
+/* Color variants using CSS variables */
+.loading-spinner.primary {
+  color: var(--primary-600);
+}
+
+.loading-spinner.secondary {
+  color: var(--gray-600);
+}
+
+.loading-spinner.success {
+  color: var(--success-500);
+}
+
+.loading-spinner.warning {
+  color: var(--warning-500);
+}
+
+.loading-spinner.danger {
+  color: var(--error-500);
+}
+
+.spinner-message {
+  margin-top: var(--spacing-lg);
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.loading-spinner.overlay .spinner-message {
+  color: var(--gray-800);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Gradient spinner variant */
+.loading-spinner.gradient .spinner-circle {
+  background: conic-gradient(from 0deg, transparent, currentColor);
+  border: none;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 4px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 4px));
+}
+
+/* Pulse animation variant */
+.loading-spinner.pulse .spinner-circle {
+  animation: pulse 1.5s ease-in-out infinite;
+  border: 4px solid currentColor;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,307 @@
+.input-container {
+  margin-bottom: var(--spacing-lg);
+}
+
+.input-container.disabled {
+  opacity: 0.6;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Enhanced form control styles - Light Theme */
+.form-control {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+  background: var(--primary-background);
+  color: var(--text-primary);
+  font-family: inherit;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-control::placeholder {
+  color: var(--text-secondary);
+}
+
+.form-control:disabled {
+  background: var(--secondary-background);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.form-control:read-only {
+  background: var(--gray-50);
+  cursor: default;
+}
+
+/* Size variants */
+.form-control-small {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.form-control-large {
+  padding: 1rem 1.25rem;
+  font-size: 1.125rem;
+}
+
+/* Variant styles */
+.form-control-outlined {
+  background: transparent;
+  border-width: 2px;
+}
+
+.form-control-filled {
+  background: var(--gray-100);
+  border: 2px solid transparent;
+}
+
+.form-control-filled:focus {
+  background: white;
+  border-color: var(--primary-500);
+}
+
+/* Icon styles */
+.input-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+  font-size: 1rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.input-icon-left {
+  left: 0.75rem;
+}
+
+.input-icon-right {
+  right: 0.75rem;
+}
+
+.form-control.has-icon {
+  padding-left: 2.5rem;
+}
+
+.form-control.has-icon-right {
+  padding-right: 2.5rem;
+  padding-left: 1rem;
+}
+
+/* Action buttons (clear, password toggle) */
+.input-action {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.input-action:hover {
+  color: var(--gray-600);
+  background: var(--gray-100);
+}
+
+.password-toggle {
+  right: 0.75rem;
+}
+
+.clear-button {
+  right: 0.75rem;
+  font-size: 1rem;
+}
+
+.form-control.has-icon-right ~ .input-action {
+  right: 2.5rem;
+}
+
+/* Multiple actions */
+.input-wrapper:has(.password-toggle):has(.clear-button) .password-toggle {
+  right: 2.5rem;
+}
+
+/* Textarea specific styles */
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+/* Select specific styles */
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.form-select:disabled {
+  cursor: not-allowed;
+}
+
+/* Help text */
+.input-help-text {
+  margin-top: var(--spacing-xs);
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  line-height: 1.4;
+}
+
+/* State styles */
+.form-control.error {
+  border-color: var(--error-500);
+}
+
+.form-control.error:focus {
+  border-color: var(--error-500);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-control.success {
+  border-color: var(--success-500);
+}
+
+.form-control.success:focus {
+  border-color: var(--success-500);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-control.warning {
+  border-color: var(--warning-500);
+}
+
+.form-control.warning:focus {
+  border-color: var(--warning-500);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* Floating label variant */
+.input-floating {
+  position: relative;
+}
+
+.input-floating .form-label {
+  position: absolute;
+  left: 1rem;
+  top: 0.75rem;
+  background: white;
+  padding: 0 0.25rem;
+  color: var(--gray-500);
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-floating .form-control:focus ~ .form-label,
+.input-floating .form-control:not(:placeholder-shown) ~ .form-label {
+  top: -0.5rem;
+  left: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--primary-600);
+}
+
+/* Input group styles */
+.input-group {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.input-group .form-control {
+  border-radius: 0;
+  border-right: none;
+  box-shadow: none;
+}
+
+.input-group .form-control:focus {
+  z-index: 2;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-group-prepend,
+.input-group-append {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--gray-100);
+  border: 2px solid var(--gray-300);
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.input-group-prepend {
+  border-right: none;
+}
+
+.input-group-append {
+  border-left: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .form-control {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .form-control-small {
+    font-size: 14px;
+  }
+  
+  .input-action {
+    padding: 0.5rem;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .form-control {
+    border-width: 3px;
+  }
+  
+  .form-control:focus {
+    outline: 2px solid var(--primary-600);
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .form-control,
+  .input-action,
+  .input-icon {
+    transition: none;
+  }
+}

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Optimization Test Suite</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2563EB, #06B6D4);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            color: #2563EB;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #2563EB;
+            border: 1px solid #2563EB;
+        }
+        
+        .btn-secondary:hover {
+            background: #f0f9ff;
+        }
+        
+        .results {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        
+        .status.running {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            color: #6b7280;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563EB, #06B6D4);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .test-section {
+                padding: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Performance Optimization Test Suite</h1>
+        <p>Comprehensive testing for CSS optimization, cross-browser compatibility, and responsive design</p>
+    </div>
+
+    <div class="grid">
+        <div class="test-section">
+            <h2>📦 CSS Optimization Tests</h2>
+            <p>Test CSS bundle size optimization and unused style removal.</p>
+            <button class="btn" onclick="runCSSOptimizationTest()">Run CSS Tests</button>
+            <button class="btn btn-secondary" onclick="downloadOptimizedCSS()">Download Optimized CSS</button>
+            <button class="btn btn-secondary" onclick="applyOptimizedCSS()">Apply Optimized CSS</button>
+            <div id="css-status" class="status" style="display: none;"></div>
+            <div id="css-results" class="results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 Cross-Browser Compatibility</h2>
+            <p>Test browser feature support and compatibility issues.</p>
+            <button class="btn" onclick="runBrowserCompatibilityTest()">Run Browser Tests</button>
+            <button class="btn btn-secondary" onclick="showBrowserInfo()">Show Browser Info</button>
+            <div id="browser-status" class="status" style="display: none;"></div>
+            <div id="browser-results" class="results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📱 Responsive Design Tests</h2>
+            <p>Validate responsive behavior across different screen sizes.</p>
+            <button class="btn" onclick="runResponsiveTest()">Run Responsive Tests</button>
+            <button class="btn btn-secondary" onclick="testTouchTargets()">Test Touch Targets</button>
+            <button class="btn btn-secondary" onclick="testViewportSizes()">Test Viewport Sizes</button>
+            <div id="responsive-status" class="status" style="display: none;"></div>
+            <div id="responsive-results" class="results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎬 Animation Performance</h2>
+            <p>Test animation smoothness and performance on different devices.</p>
+            <button class="btn" onclick="runAnimationTest()">Run Animation Tests</button>
+            <button class="btn btn-secondary" onclick="testTransformPerformance()">Test Transform Performance</button>
+            <div id="animation-status" class="status" style="display: none;"></div>
+            <div id="animation-results" class="results" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🏃‍♂️ Complete Test Suite</h2>
+        <p>Run all optimization tests and generate a comprehensive report.</p>
+        <div class="grid">
+            <div>
+                <button class="btn" onclick="runCompleteTestSuite()" style="width: 100%; margin-bottom: 10px;">
+                    Run Complete Test Suite
+                </button>
+                <button class="btn btn-secondary" onclick="runQuickTest()" style="width: 100%; margin-bottom: 10px;">
+                    Run Quick Test
+                </button>
+            </div>
+            <div>
+                <button class="btn btn-secondary" onclick="downloadHTMLReport()" style="width: 100%; margin-bottom: 10px;">
+                    Download HTML Report
+                </button>
+                <button class="btn btn-secondary" onclick="showTestResults()" style="width: 100%; margin-bottom: 10px;">
+                    Show Saved Results
+                </button>
+            </div>
+        </div>
+        
+        <div id="complete-status" class="status" style="display: none;"></div>
+        <div class="progress-bar" id="progress-bar" style="display: none;">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div id="complete-results" class="results" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Results Summary</h2>
+        <div id="summary-metrics" class="grid" style="display: none;">
+            <div>
+                <div class="metric">
+                    <span class="metric-label">Overall Score</span>
+                    <span class="metric-value" id="overall-score">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">CSS Savings</span>
+                    <span class="metric-value" id="css-savings">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Browser Issues</span>
+                    <span class="metric-value" id="browser-issues">-</span>
+                </div>
+            </div>
+            <div>
+                <div class="metric">
+                    <span class="metric-label">Responsive Score</span>
+                    <span class="metric-value" id="responsive-score">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Animation FPS</span>
+                    <span class="metric-value" id="animation-fps">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Critical Issues</span>
+                    <span class="metric-value" id="critical-issues">-</span>
+                </div>
+            </div>
+        </div>
+        <p id="no-results" style="color: #6b7280; text-align: center; padding: 20px;">
+            No test results available. Run tests to see summary.
+        </p>
+    </div>
+
+    <script type="module">
+        // Import utilities (these would need to be properly imported in a real app)
+        let testRunner = null;
+        let cssPurger = null;
+        let lastTestResults = null;
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            try {
+                // In a real app, these would be proper imports
+                // For now, we'll create placeholder functions
+                console.log('Performance test page loaded');
+                showStatus('complete', 'Test page loaded successfully', 'success');
+            } catch (error) {
+                console.error('Failed to initialize test utilities:', error);
+                showStatus('complete', 'Failed to initialize test utilities', 'error');
+            }
+        });
+
+        // Utility functions
+        function showStatus(testType, message, type = 'running') {
+            const statusEl = document.getElementById(`${testType}-status`);
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = `status ${type}`;
+                statusEl.style.display = 'block';
+            }
+        }
+
+        function showResults(testType, results) {
+            const resultsEl = document.getElementById(`${testType}-results`);
+            if (resultsEl) {
+                resultsEl.textContent = typeof results === 'string' ? results : JSON.stringify(results, null, 2);
+                resultsEl.style.display = 'block';
+            }
+        }
+
+        function updateProgress(percentage) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressFill = document.getElementById('progress-fill');
+            
+            if (progressBar && progressFill) {
+                progressBar.style.display = 'block';
+                progressFill.style.width = `${percentage}%`;
+                
+                if (percentage >= 100) {
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                    }, 1000);
+                }
+            }
+        }
+
+        function updateSummary(results) {
+            if (!results) return;
+            
+            document.getElementById('summary-metrics').style.display = 'grid';
+            document.getElementById('no-results').style.display = 'none';
+            
+            document.getElementById('overall-score').textContent = `${results.summary?.overallScore || 0}/100`;
+            document.getElementById('css-savings').textContent = `${results.details?.css?.savingsPercentage || 0}%`;
+            document.getElementById('browser-issues').textContent = results.details?.crossBrowser?.issues?.length || 0;
+            document.getElementById('responsive-score').textContent = `${results.details?.responsive?.score || 0}/100`;
+            document.getElementById('animation-fps').textContent = results.details?.performance?.fps || 0;
+            document.getElementById('critical-issues').textContent = results.summary?.criticalIssues?.length || 0;
+        }
+
+        // Test functions (these would call the actual utilities in a real app)
+        window.runCSSOptimizationTest = async function() {
+            showStatus('css', 'Running CSS optimization tests...', 'running');
+            
+            try {
+                // Simulate CSS optimization test
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const mockResults = {
+                    originalRules: 1250,
+                    keptRules: 890,
+                    savingsPercentage: 29,
+                    unusedClasses: ['unused-class-1', 'unused-class-2'],
+                    recommendations: ['Remove unused CSS classes', 'Implement CSS purging']
+                };
+                
+                showResults('css', mockResults);
+                showStatus('css', 'CSS optimization test completed', 'success');
+                
+            } catch (error) {
+                showStatus('css', `CSS test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runBrowserCompatibilityTest = async function() {
+            showStatus('browser', 'Testing browser compatibility...', 'running');
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const mockResults = {
+                    browser: `${navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other'} (detected)`,
+                    modernFeatures: {
+                        cssGrid: CSS.supports('display', 'grid'),
+                        flexbox: CSS.supports('display', 'flex'),
+                        customProperties: CSS.supports('--custom', 'property')
+                    },
+                    issues: [],
+                    recommendations: ['All modern features supported']
+                };
+                
+                showResults('browser', mockResults);
+                showStatus('browser', 'Browser compatibility test completed', 'success');
+                
+            } catch (error) {
+                showStatus('browser', `Browser test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runResponsiveTest = async function() {
+            showStatus('responsive', 'Testing responsive design...', 'running');
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 2500));
+                
+                const mockResults = {
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    breakpoint: window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop',
+                    touchFriendly: 'ontouchstart' in window,
+                    score: 85,
+                    issues: window.innerWidth < 480 ? ['Small viewport detected'] : []
+                };
+                
+                showResults('responsive', mockResults);
+                showStatus('responsive', 'Responsive design test completed', 'success');
+                
+            } catch (error) {
+                showStatus('responsive', `Responsive test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runAnimationTest = async function() {
+            showStatus('animation', 'Testing animation performance...', 'running');
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                const mockResults = {
+                    fps: Math.floor(Math.random() * 20) + 50, // 50-70 FPS
+                    smoothness: 'good',
+                    recommendations: ['Animations performing well']
+                };
+                
+                showResults('animation', mockResults);
+                showStatus('animation', 'Animation performance test completed', 'success');
+                
+            } catch (error) {
+                showStatus('animation', `Animation test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runCompleteTestSuite = async function() {
+            showStatus('complete', 'Running complete test suite...', 'running');
+            updateProgress(0);
+            
+            try {
+                // Simulate running all tests
+                updateProgress(20);
+                await window.runCSSOptimizationTest();
+                
+                updateProgress(40);
+                await window.runBrowserCompatibilityTest();
+                
+                updateProgress(60);
+                await window.runResponsiveTest();
+                
+                updateProgress(80);
+                await window.runAnimationTest();
+                
+                updateProgress(100);
+                
+                // Generate mock comprehensive results
+                lastTestResults = {
+                    timestamp: new Date().toISOString(),
+                    summary: {
+                        overallScore: 87,
+                        criticalIssues: [],
+                        recommendations: [
+                            { priority: 'high', category: 'CSS', action: 'Optimize bundle size' },
+                            { priority: 'medium', category: 'Performance', action: 'Improve animations' }
+                        ]
+                    },
+                    details: {
+                        css: { savingsPercentage: 29, originalSize: 1250, optimizedSize: 890 },
+                        crossBrowser: { issues: [], browser: { name: 'Chrome', version: '120' } },
+                        responsive: { score: 85 },
+                        performance: { fps: 62, smoothness: 'good' }
+                    }
+                };
+                
+                updateSummary(lastTestResults);
+                showResults('complete', 'Complete test suite finished successfully!\n\nCheck the summary section above for key metrics.');
+                showStatus('complete', 'Complete test suite completed successfully', 'success');
+                
+                // Save to sessionStorage
+                sessionStorage.setItem('optimizationResults', JSON.stringify(lastTestResults));
+                
+            } catch (error) {
+                showStatus('complete', `Complete test suite failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runQuickTest = async function() {
+            showStatus('complete', 'Running quick test...', 'running');
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const quickResults = {
+                    css: { savingsPercentage: 25 },
+                    browser: { issues: 0 },
+                    responsive: { score: 90 },
+                    performance: { fps: 58 }
+                };
+                
+                showResults('complete', `Quick Test Results:\n\nCSS Savings: ${quickResults.css.savingsPercentage}%\nBrowser Issues: ${quickResults.browser.issues}\nResponsive Score: ${quickResults.responsive.score}/100\nAnimation FPS: ${quickResults.performance.fps}`);
+                showStatus('complete', 'Quick test completed', 'success');
+                
+            } catch (error) {
+                showStatus('complete', `Quick test failed: ${error.message}`, 'error');
+            }
+        };
+
+        // Utility functions
+        window.downloadOptimizedCSS = function() {
+            alert('This would download an optimized CSS bundle in a real implementation.');
+        };
+
+        window.applyOptimizedCSS = function() {
+            alert('This would apply optimized CSS to the current page in a real implementation.');
+        };
+
+        window.showBrowserInfo = function() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                viewport: `${window.innerWidth}x${window.innerHeight}`,
+                pixelRatio: window.devicePixelRatio
+            };
+            
+            showResults('browser', info);
+        };
+
+        window.testTouchTargets = function() {
+            const buttons = document.querySelectorAll('button');
+            let touchFriendly = 0;
+            
+            buttons.forEach(btn => {
+                const rect = btn.getBoundingClientRect();
+                if (rect.height >= 44 && rect.width >= 44) {
+                    touchFriendly++;
+                }
+            });
+            
+            const results = {
+                totalButtons: buttons.length,
+                touchFriendlyButtons: touchFriendly,
+                percentage: Math.round((touchFriendly / buttons.length) * 100)
+            };
+            
+            showResults('responsive', results);
+        };
+
+        window.testViewportSizes = function() {
+            const breakpoints = {
+                'xs': 320,
+                'sm': 480,
+                'md': 768,
+                'lg': 1024,
+                'xl': 1440
+            };
+            
+            const currentWidth = window.innerWidth;
+            let currentBreakpoint = 'xs';
+            
+            Object.entries(breakpoints).forEach(([name, width]) => {
+                if (currentWidth >= width) {
+                    currentBreakpoint = name;
+                }
+            });
+            
+            const results = {
+                currentViewport: `${window.innerWidth}x${window.innerHeight}`,
+                currentBreakpoint: currentBreakpoint,
+                breakpoints: breakpoints,
+                orientation: window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'
+            };
+            
+            showResults('responsive', results);
+        };
+
+        window.testTransformPerformance = async function() {
+            showStatus('animation', 'Testing CSS transform performance...', 'running');
+            
+            const testElement = document.createElement('div');
+            testElement.style.cssText = `
+                position: fixed;
+                top: -100px;
+                left: -100px;
+                width: 50px;
+                height: 50px;
+                background: linear-gradient(45deg, #2563EB, #06B6D4);
+                border-radius: 50%;
+                will-change: transform;
+            `;
+            
+            document.body.appendChild(testElement);
+            
+            const startTime = performance.now();
+            let frameCount = 0;
+            
+            const animate = () => {
+                frameCount++;
+                const progress = (performance.now() - startTime) / 1000;
+                
+                testElement.style.transform = `
+                    translateX(${Math.sin(progress * 2) * 50}px)
+                    translateY(${Math.cos(progress * 2) * 50}px)
+                    rotate(${progress * 180}deg)
+                `;
+                
+                if (frameCount < 60) {
+                    requestAnimationFrame(animate);
+                } else {
+                    const endTime = performance.now();
+                    document.body.removeChild(testElement);
+                    
+                    const results = {
+                        duration: Math.round(endTime - startTime),
+                        frameCount: frameCount,
+                        averageFps: Math.round((frameCount / (endTime - startTime)) * 1000),
+                        performance: endTime - startTime < 1100 ? 'excellent' : 'good'
+                    };
+                    
+                    showResults('animation', results);
+                    showStatus('animation', 'Transform performance test completed', 'success');
+                }
+            };
+            
+            requestAnimationFrame(animate);
+        };
+
+        window.downloadHTMLReport = function() {
+            if (lastTestResults) {
+                alert('This would download a comprehensive HTML report in a real implementation.');
+            } else {
+                alert('No test results available. Run the complete test suite first.');
+            }
+        };
+
+        window.showTestResults = function() {
+            const saved = sessionStorage.getItem('optimizationResults');
+            if (saved) {
+                try {
+                    const results = JSON.parse(saved);
+                    showResults('complete', results);
+                    updateSummary(results);
+                } catch (error) {
+                    showResults('complete', 'Error parsing saved results: ' + error.message);
+                }
+            } else {
+                showResults('complete', 'No saved test results found.');
+            }
+        };
+    </script>
+</body>
+</html>

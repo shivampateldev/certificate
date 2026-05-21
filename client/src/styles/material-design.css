@@ -1,0 +1,426 @@
+/* Material Design Components */
+
+/* Material Design Cards */
+.md-card {
+  background: var(--primary-background);
+  border-radius: 12px;
+  box-shadow: var(--elevation-2);
+  border: none;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.md-card:hover {
+  box-shadow: var(--elevation-4);
+  transform: translateY(-2px);
+}
+
+.md-card-elevated {
+  box-shadow: var(--elevation-8);
+}
+
+.md-card-content {
+  padding: 24px;
+}
+
+.md-card-header {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.md-card-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.md-card-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.md-card-actions {
+  padding: 8px 16px 16px 16px;
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+/* Material Design Stepper */
+.md-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+}
+
+.md-stepper-vertical {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.md-step {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  position: relative;
+}
+
+.md-step-vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--spacing-lg) 0;
+}
+
+.md-step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.md-step-icon.active {
+  background: var(--primary-blue);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.md-step-icon.completed {
+  background: var(--success-500);
+  color: white;
+}
+
+.md-step-icon.inactive {
+  background: var(--secondary-background);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+}
+
+.md-step-content {
+  flex: 1;
+}
+
+.md-step-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.md-step-description {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.md-step-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--border-color);
+  position: relative;
+}
+
+.md-step-connector.completed {
+  background: var(--success-500);
+}
+
+.md-step-connector-vertical {
+  width: 2px;
+  height: 32px;
+  background: var(--border-color);
+  position: absolute;
+  left: 19px;
+  top: 40px;
+}
+
+.md-step-connector-vertical.completed {
+  background: var(--success-500);
+}
+
+/* Material Design "How it works" Section */
+.md-how-it-works {
+  background: var(--primary-background);
+  border-radius: 16px;
+  box-shadow: var(--elevation-2);
+  padding: var(--spacing-2xl);
+  margin: var(--spacing-xl) 0;
+}
+
+.md-how-it-works-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.md-how-it-works-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+.md-how-it-works-step {
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+.md-how-it-works-step-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--cyan-accent) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--spacing-lg) auto;
+  font-size: var(--text-2xl);
+  color: white;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+}
+
+.md-how-it-works-step-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.md-how-it-works-step-description {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* Material Design "How to use" Section */
+.md-how-to-use {
+  background: var(--primary-background);
+  border-radius: 16px;
+  box-shadow: var(--elevation-2);
+  padding: var(--spacing-2xl);
+  margin: var(--spacing-xl) 0;
+}
+
+.md-how-to-use-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.md-how-to-use-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.md-how-to-use-step {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+}
+
+.md-how-to-use-step-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-bold);
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.md-how-to-use-step-content {
+  flex: 1;
+  padding-top: 8px;
+}
+
+.md-how-to-use-step-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.md-how-to-use-step-description {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* Material Design Buttons */
+.md-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  min-height: 44px;
+  position: relative;
+  overflow: hidden;
+}
+
+.md-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
+  transform: translate(-50%, -50%);
+}
+
+.md-button:active::before {
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  left: 50%;
+}
+
+.md-button-raised {
+  background: var(--primary-blue);
+  color: white;
+  box-shadow: var(--elevation-2);
+}
+
+.md-button-raised:hover {
+  box-shadow: var(--elevation-4);
+  transform: translateY(-1px);
+}
+
+.md-button-outlined {
+  background: transparent;
+  border: 2px solid var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+.md-button-outlined:hover {
+  background: var(--primary-50);
+}
+
+.md-button-text {
+  background: transparent;
+  color: var(--primary-blue);
+}
+
+.md-button-text:hover {
+  background: var(--primary-50);
+}
+
+/* Material Design Floating Action Button */
+.md-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  box-shadow: var(--elevation-8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xl);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed;
+  bottom: var(--spacing-xl);
+  right: var(--spacing-xl);
+  z-index: 1000;
+}
+
+.md-fab:hover {
+  box-shadow: var(--shadow-2xl);
+  transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .md-stepper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-lg);
+  }
+  
+  .md-step {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-sm);
+  }
+  
+  .md-step-connector {
+    display: none;
+  }
+  
+  .md-how-it-works-steps {
+    grid-template-columns: 1fr;
+  }
+  
+  /* .md-how-to-use-step stays flex-row on mobile — number left, text right */
+
+  
+  .md-fab {
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    width: 48px;
+    height: 48px;
+    font-size: var(--text-lg);
+  }
+}
+
+/* Animation utilities for Material Design */
+@keyframes md-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.md-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.md-ripple::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  transform: scale(0);
+  animation: md-ripple 0.6s linear;
+  pointer-events: none;
+}
+
+/* Material Design elevation classes */
+.elevation-0 { box-shadow: none; }
+.elevation-1 { box-shadow: var(--elevation-1); }
+.elevation-2 { box-shadow: var(--elevation-2); }
+.elevation-4 { box-shadow: var(--elevation-4); }
+.elevation-8 { box-shadow: var(--elevation-8); }

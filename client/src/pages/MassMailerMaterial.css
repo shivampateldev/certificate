@@ -1,0 +1,339 @@
+/* Mass Mailer Material Design Enhancements */
+
+/* Override the existing background for Material Design approach */
+.mass-mailer {
+  background: var(--secondary-background);
+  padding: var(--spacing-xl);
+}
+
+.mass-mailer .container {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+}
+
+/* Header section with Material Design styling */
+.mass-mailer .header-section {
+  background: var(--primary-background);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--elevation-2);
+  margin-bottom: var(--spacing-xl);
+  text-align: center;
+}
+
+.mass-mailer .header-section h1 {
+  color: var(--text-primary);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--spacing-md);
+  text-shadow: none;
+}
+
+.mass-mailer .subtitle {
+  color: var(--text-secondary);
+  font-size: var(--text-lg);
+  margin: 0;
+}
+
+/* Authentication section Material Design */
+.mass-mailer .auth-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.mass-mailer .auth-section .md-card {
+  max-width: 500px;
+  width: 100%;
+}
+
+/* Email form Material Design */
+.mass-mailer .email-form {
+  margin-bottom: var(--spacing-xl);
+}
+
+.mass-mailer .file-uploads {
+  margin-bottom: var(--spacing-xl);
+}
+
+.mass-mailer .email-config {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* File success indicator */
+.file-success {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--success-500);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--success-500);
+}
+
+/* Enhanced form styling */
+.mass-mailer .form-control[type="file"] {
+  padding: var(--spacing-lg);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--secondary-background);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.mass-mailer .form-control[type="file"]:hover {
+  border-color: var(--primary-blue);
+  background: var(--primary-50);
+}
+
+.mass-mailer .form-control[type="file"]:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Spinner animation */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Material Design How to Use section enhancements */
+.mass-mailer .md-how-to-use {
+  margin-bottom: var(--spacing-xl);
+  border-radius: 16px;
+  padding: 28px 32px;
+}
+
+.mass-mailer .md-how-to-use-stepper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Each step row: number circle on LEFT, text on RIGHT */
+.mass-mailer .md-how-to-use-step {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 20px;
+  padding: 18px 16px;
+  border-radius: var(--radius-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  text-align: left !important;
+}
+
+.mass-mailer .md-how-to-use-step:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: translateX(4px);
+  box-shadow: 0 2px 12px rgba(79, 70, 229, 0.08);
+}
+
+/* Number badge — fixed size, no repositioning */
+.mass-mailer .md-how-to-use-step-number {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-blue, #4F46E5) 0%, #7C3AED 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: static;
+  z-index: 2;
+  margin-top: 2px;
+}
+
+.mass-mailer .md-how-to-use-step:hover .md-how-to-use-step-number {
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.45);
+  transform: scale(1.08);
+}
+
+/* Vertical connector line between steps */
+.mass-mailer .md-how-to-use-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 35px;
+  top: 62px;
+  width: 2px;
+  height: calc(100% - 40px);
+  background: linear-gradient(to bottom, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.05));
+  z-index: 1;
+}
+
+/* Text content: fills remaining space */
+.mass-mailer .md-how-to-use-step-content {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.mass-mailer .md-how-to-use-step-title {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.mass-mailer .md-how-to-use-step-description {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Responsive design for Material Design components */
+@media (max-width: 768px) {
+  .mass-mailer {
+    padding: var(--spacing-lg);
+  }
+  
+  .mass-mailer .header-section {
+    padding: var(--spacing-xl);
+  }
+  
+  .mass-mailer .header-section h1 {
+    font-size: var(--text-3xl);
+  }
+  
+  .mass-mailer .subtitle {
+    font-size: var(--text-base);
+  }
+  
+  /* Keep row layout on mobile — number stays left, text right */
+  .mass-mailer .md-how-to-use-step {
+    gap: 14px;
+    padding: 14px 12px;
+  }
+  
+  .mass-mailer .md-card-content.flex {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .mass-mailer {
+    padding: var(--spacing-md);
+  }
+  
+  .mass-mailer .header-section {
+    padding: var(--spacing-lg);
+  }
+  
+  .mass-mailer .header-section h1 {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* Layout alignment fixes */
+.mass-mailer .grid {
+  align-items: start;
+}
+
+.mass-mailer .form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.mass-mailer .form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* Consistent spacing for all sections */
+.mass-mailer > .container > * {
+  margin-bottom: var(--spacing-xl);
+}
+
+.mass-mailer > .container > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced accessibility */
+.mass-mailer .md-how-to-use-step:focus-within {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+.mass-mailer .form-control:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Button alignment and spacing */
+.mass-mailer .btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+/* Form control consistency */
+.mass-mailer .form-control {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+.mass-mailer textarea.form-control {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mass-mailer .md-how-to-use-step-number {
+    border: 2px solid var(--text-primary);
+  }
+  
+  .mass-mailer .file-success {
+    border: 1px solid var(--success-500);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mass-mailer .md-how-to-use-step {
+    transition: none;
+  }
+  
+  .mass-mailer .md-how-to-use-step:hover {
+    transform: none;
+  }
+  
+  .mass-mailer .md-how-to-use-step-number {
+    transition: none;
+  }
+  
+  .mass-mailer .md-how-to-use-step:hover .md-how-to-use-step-number {
+    transform: none;
+  }
+  
+  .spinner {
+    animation: none;
+  }
+}

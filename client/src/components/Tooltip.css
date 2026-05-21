@@ -1,0 +1,194 @@
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-trigger {
+  display: inline-block;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.tooltip-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tooltip-content {
+  background: var(--gray-900);
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 250px;
+  word-wrap: break-word;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-700);
+}
+
+.tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+/* Position variants */
+.tooltip-top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  margin-bottom: 8px;
+}
+
+.tooltip-top .tooltip-arrow {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0 6px;
+  border-color: var(--gray-900) transparent transparent transparent;
+}
+
+.tooltip-bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  margin-top: 8px;
+}
+
+.tooltip-bottom .tooltip-arrow {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 6px 6px 6px;
+  border-color: transparent transparent var(--gray-900) transparent;
+}
+
+.tooltip-left {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-8px);
+  margin-right: 8px;
+}
+
+.tooltip-left .tooltip-arrow {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 0 6px 6px;
+  border-color: transparent transparent transparent var(--gray-900);
+}
+
+.tooltip-right {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(8px);
+  margin-left: 8px;
+}
+
+.tooltip-right .tooltip-arrow {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 6px 6px 0;
+  border-color: transparent var(--gray-900) transparent transparent;
+}
+
+/* Light variant */
+.tooltip-light .tooltip-content {
+  background: white;
+  color: var(--gray-900);
+  border: 1px solid var(--gray-300);
+  box-shadow: var(--shadow-lg);
+}
+
+.tooltip-light.tooltip-top .tooltip-arrow {
+  border-color: white transparent transparent transparent;
+}
+
+.tooltip-light.tooltip-bottom .tooltip-arrow {
+  border-color: transparent transparent white transparent;
+}
+
+.tooltip-light.tooltip-left .tooltip-arrow {
+  border-color: transparent transparent transparent white;
+}
+
+.tooltip-light.tooltip-right .tooltip-arrow {
+  border-color: transparent white transparent transparent;
+}
+
+/* Animation variants */
+.tooltip-fade {
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.tooltip-scale {
+  transition: all 0.2s ease;
+  transform-origin: center;
+}
+
+.tooltip-scale:not(.tooltip-visible) {
+  transform: scale(0.8);
+}
+
+.tooltip-slide.tooltip-top:not(.tooltip-visible) {
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.tooltip-slide.tooltip-bottom:not(.tooltip-visible) {
+  transform: translateX(-50%) translateY(4px);
+}
+
+.tooltip-slide.tooltip-left:not(.tooltip-visible) {
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.tooltip-slide.tooltip-right:not(.tooltip-visible) {
+  transform: translateY(-50%) translateX(4px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tooltip-content {
+    max-width: 200px;
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .tooltip-arrow {
+    border-width: 5px;
+  }
+  
+  .tooltip-top .tooltip-arrow {
+    border-width: 5px 5px 0 5px;
+  }
+  
+  .tooltip-bottom .tooltip-arrow {
+    border-width: 0 5px 5px 5px;
+  }
+  
+  .tooltip-left .tooltip-arrow {
+    border-width: 5px 0 5px 5px;
+  }
+  
+  .tooltip-right .tooltip-arrow {
+    border-width: 5px 5px 5px 0;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tooltip-content {
+    border: 2px solid var(--gray-100);
+  }
+}

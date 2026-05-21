@@ -1,0 +1,234 @@
+/* Layout Fix CSS - Prevent shrinking and overlapping */
+
+/* Ensure main containers don't shrink */
+.home,
+.mass-mailer {
+  min-width: 320px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+/* Fix container widths */
+.container,
+.auth-card,
+.email-form,
+.instructions {
+  min-width: 280px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix grid layouts */
+.features-grid,
+.categories-grid,
+.steps {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.features-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+}
+
+.categories-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+}
+
+.steps {
+  grid-template-columns: repeat(4, 1fr) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  gap: 2rem !important;
+  justify-items: center !important;
+  align-items: start !important;
+}
+
+/* Fix text wrapping and prevent overflow */
+.step-content h4,
+.feature-card h3,
+.category-item h4 {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+  text-align: center !important;
+}
+
+.step-content p,
+.feature-card p,
+.category-item p {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+}
+
+/* Ensure info section content fits properly */
+.info-section {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.info-section h2 {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  position: relative !important;
+  z-index: 2 !important;
+  margin-bottom: 2rem !important;
+}
+
+.steps {
+  position: relative !important;
+  z-index: 1 !important;
+  margin-top: 2rem !important;
+}
+
+/* Fix responsive behavior */
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .categories-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem !important;
+    justify-items: center !important;
+  }
+
+  .feature-card,
+  .category-item,
+  .step {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 1rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .step {
+    min-height: 280px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    position: relative !important;
+    z-index: 1 !important;
+    padding: 1.5rem 1rem !important;
+    max-width: 250px !important;
+  }
+
+  .step-number {
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  .step-content {
+    position: relative !important;
+    z-index: 2 !important;
+    margin-top: 0.5rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .home,
+  .mass-mailer {
+    padding: 0.5rem !important;
+  }
+
+  .container,
+  .auth-card,
+  .email-form,
+  .instructions {
+    padding: 1rem !important;
+    margin: 0.5rem 0 !important;
+  }
+
+  .hero-title {
+    font-size: 1.5rem !important;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem !important;
+  }
+
+  .steps {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    justify-items: center !important;
+  }
+
+  .step {
+    min-height: 260px !important;
+    padding: 1.5rem 1rem !important;
+    max-width: 300px !important;
+  }
+}
+
+/* Fix button layouts */
+.auth-buttons {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+  align-items: center !important;
+}
+
+.btn-google,
+.btn-secondary {
+  width: 100% !important;
+  max-width: 300px !important;
+  min-width: 200px !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix form layouts */
+.file-uploads {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .file-uploads {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Ensure proper spacing */
+.mass-mailer .container {
+  margin: 0 auto !important;
+  max-width: 900px !important;
+}
+
+.home {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+}
+
+/* Fix header spacing */
+.header-section {
+  text-align: center !important;
+  margin-bottom: 2rem !important;
+  padding: 1rem !important;
+}
+
+.header-section h1 {
+  margin-bottom: 0.5rem !important;
+  word-wrap: break-word !important;
+}
+
+.subtitle {
+  word-wrap: break-word !important;
+  max-width: 100% !important;
+}

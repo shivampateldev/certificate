@@ -1,0 +1,450 @@
+/* Material Design Table System */
+.material-table-container {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  border: 1px solid #E5E7EB;
+  transition: box-shadow 0.2s ease;
+}
+
+.material-table-container:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.material-table-wrapper {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.material-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Table Headers */
+.material-table-header {
+  background: #F8FAFC;
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #1F2937;
+  border-bottom: 1px solid #E5E7EB;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.material-table-header.sortable {
+  cursor: pointer;
+}
+
+.material-table-header.sortable:hover {
+  background: #F1F5F9;
+}
+
+.material-table-header.align-center {
+  text-align: center;
+}
+
+.material-table-header.align-right {
+  text-align: right;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.header-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: 0.025em;
+}
+
+.sort-icon {
+  font-size: 12px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  min-width: 16px;
+  text-align: center;
+}
+
+.sort-icon.active {
+  opacity: 1;
+  color: #2563EB;
+}
+
+.sort-icon.inactive {
+  opacity: 0.3;
+}
+
+.material-table-header.sortable:hover .sort-icon.inactive {
+  opacity: 0.6;
+}
+
+/* Table Cells */
+.material-table-cell {
+  padding: 16px;
+  border-bottom: 1px solid #F3F4F6;
+  vertical-align: middle;
+  color: #374151;
+  transition: background-color 0.2s ease;
+}
+
+.material-table-cell.align-center {
+  text-align: center;
+}
+
+.material-table-cell.align-right {
+  text-align: right;
+}
+
+/* Table Rows */
+.material-table-row {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.material-table-row:last-child {
+  border-bottom: none;
+}
+
+.material-table-row.hoverable:hover {
+  background: #F8FAFC;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.material-table-row.selected {
+  background: #EFF6FF;
+  border-color: #DBEAFE;
+}
+
+.material-table-row.selected:hover {
+  background: #DBEAFE;
+}
+
+.material-table-row.selected .material-table-cell {
+  border-bottom-color: #DBEAFE;
+}
+
+/* Checkbox Column */
+.material-table-checkbox-column {
+  width: 48px;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.material-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2563EB;
+  border-radius: 3px;
+}
+
+/* Empty State */
+.material-table-empty {
+  padding: 60px 40px;
+  text-align: center;
+  color: #6B7280;
+  background: #FAFAFA;
+  border-radius: 12px;
+}
+
+.material-table-empty h3 {
+  color: #374151;
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.material-table-empty p {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.material-table-empty .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .material-table-container {
+    border-radius: 8px;
+    margin: 0 -16px;
+  }
+
+  .material-table {
+    font-size: 13px;
+  }
+
+  .material-table-header,
+  .material-table-cell {
+    padding: 12px 8px;
+  }
+
+  .material-table-checkbox-column {
+    width: 40px;
+    padding: 12px 6px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .header-text {
+    font-size: 13px;
+  }
+
+  .material-table-empty {
+    padding: 40px 20px;
+  }
+
+  .material-table-empty h3 {
+    font-size: 16px;
+  }
+
+  .material-table-empty .empty-icon {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .material-table-header,
+  .material-table-cell {
+    padding: 10px 6px;
+  }
+
+  .material-table {
+    font-size: 12px;
+  }
+
+  .header-text {
+    font-size: 12px;
+  }
+}
+
+/* Enhanced Material Design Effects */
+.material-table-container {
+  position: relative;
+}
+
+.material-table-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.material-table-container:hover::before {
+  opacity: 1;
+}
+
+/* Elevation Levels */
+.material-table-container.elevation-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.material-table-container.elevation-2 {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.material-table-container.elevation-3 {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+/* Loading State */
+.material-table-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.material-table-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(37, 99, 235, 0.1),
+    transparent
+  );
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Custom Scrollbar */
+.material-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.material-table-wrapper::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+
+.material-table-wrapper::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.material-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Focus States for Accessibility */
+.material-checkbox:focus {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+.material-table-header.sortable:focus {
+  outline: 2px solid #2563EB;
+  outline-offset: -2px;
+}
+
+/* Print Styles */
+@media print {
+  .material-table-container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .material-table-row.hoverable:hover {
+    background: transparent;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .material-checkbox {
+    display: none;
+  }
+
+  .material-table-checkbox-column {
+    display: none;
+  }
+}/* A
+dditional styling for common table content */
+.category-tag {
+  display: inline-block;
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #DBEAFE;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.draft {
+  background: #F5F5F5;
+  color: #666;
+  border: 1px solid #E0E0E0;
+}
+
+.status-badge.sending {
+  background: #FFF3E0;
+  color: #F57C00;
+  border: 1px solid #FFE0B2;
+}
+
+.status-badge.completed {
+  background: #E8F5E8;
+  color: #388E3C;
+  border: 1px solid #C8E6C9;
+}
+
+.status-badge.failed {
+  background: #FFEBEE;
+  color: #D32F2F;
+  border: 1px solid #FFCDD2;
+}
+
+.delivery-rate {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.delivery-rate.excellent {
+  background: #E8F5E8;
+  color: #388E3C;
+}
+
+.delivery-rate.good {
+  background: #FFF3E0;
+  color: #F57C00;
+}
+
+.delivery-rate.poor {
+  background: #FFEBEE;
+  color: #D32F2F;
+}
+
+.campaign-subject {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* Certificate ID styling for tables */
+.material-table .certificate-id {
+  font-family: 'Courier New', monospace;
+  background: #F1F5F9;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+  font-weight: 500;
+  display: inline-block;
+}

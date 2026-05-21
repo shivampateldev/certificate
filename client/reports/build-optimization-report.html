@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Optimization Report</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .header {
+            background: linear-gradient(135deg, #2563EB, #06B6D4);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #2563EB;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .metric:last-child { border-bottom: none; }
+        .metric-label { font-weight: 600; }
+        .metric-value { color: #6b7280; }
+        .recommendation {
+            background: #f0f9ff;
+            border-left: 4px solid #06b6d4;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+        }
+        .priority-high { border-left-color: #ef4444; background: #fef2f2; }
+        .priority-medium { border-left-color: #f59e0b; background: #fffbeb; }
+        .priority-low { border-left-color: #10b981; background: #f0fdf4; }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .checklist li::before {
+            content: '✅';
+            margin-right: 10px;
+        }
+        .checklist li.incomplete::before {
+            content: '⏳';
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563EB, #06B6D4);
+            width: 38%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Build Optimization Report</h1>
+        <p>Generated on 31/10/2025, 3:04:46 am</p>
+        <div style="font-size: 2rem; margin: 10px 0;">1003.58 KB</div>
+        <p>Total Bundle Size</p>
+    </div>
+
+    <div class="grid">
+        <div class="section">
+            <h2>📦 Bundle Analysis</h2>
+            <div class="metric">
+                <span class="metric-label">CSS Files</span>
+                <span class="metric-value">1 files (226.11 KB)</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">JavaScript Files</span>
+                <span class="metric-value">1 files (777.47 KB)</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Media Files</span>
+                <span class="metric-value">0 files (0 Bytes)</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Total Size</span>
+                <span class="metric-value">1003.58 KB</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Optimization Progress</h2>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <p style="text-align: center; margin: 0;">38% Complete</p>
+            <ul class="checklist">
+                <li class="incomplete">CSS purging implemented</li><li class="incomplete">Code splitting configured</li><li class="incomplete">Image optimization enabled</li><li class="incomplete">Gzip compression enabled</li><li class="incomplete">Service worker implemented</li><li class="complete">Performance monitoring setup</li><li class="complete">Responsive design validated</li><li class="complete">Accessibility compliance checked</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 Recommendations</h2>
+        <div class="recommendation priority-high">
+                <strong>[HIGH] CSS:</strong> CSS bundle is 226.11 KB. Consider CSS purging and code splitting.
+            </div><div class="recommendation priority-high">
+                <strong>[HIGH] JavaScript:</strong> JavaScript bundle is 777.47 KB. Consider code splitting and lazy loading.
+            </div><div class="recommendation priority-low">
+                <strong>[LOW] Performance:</strong> Enable gzip compression on your web server for better performance.
+            </div><div class="recommendation priority-low">
+                <strong>[LOW] Performance:</strong> Consider implementing service worker for caching and offline functionality.
+            </div>
+    </div>
+
+    <div class="section">
+        <h2>🔧 Build Information</h2>
+        <div class="metric">
+            <span class="metric-label">Node.js Version</span>
+            <span class="metric-value">v22.19.0</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Platform</span>
+            <span class="metric-value">win32</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Build Time</span>
+            <span class="metric-value">31/10/2025, 3:04:46 am</span>
+        </div>
+    </div>
+</body>
+</html>

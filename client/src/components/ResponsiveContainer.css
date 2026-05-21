@@ -1,0 +1,79 @@
+/* Responsive Container Utility Styles */
+
+.responsive-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile-specific styles */
+.responsive-container.is-mobile {
+  /* Ensure proper touch targets */
+}
+
+.responsive-container.is-mobile .btn,
+.responsive-container.is-mobile .form-control,
+.responsive-container.is-mobile .nav-link {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.responsive-container.is-mobile .table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-container.is-mobile .grid-2,
+.responsive-container.is-mobile .grid-3,
+.responsive-container.is-mobile .grid-4 {
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+/* Tablet-specific styles */
+.responsive-container.is-tablet .grid-3,
+.responsive-container.is-tablet .grid-4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Touch device optimizations */
+.responsive-container.is-touch .btn:hover,
+.responsive-container.is-touch .card:hover {
+  transform: none;
+}
+
+.responsive-container.is-touch .btn,
+.responsive-container.is-touch .form-control,
+.responsive-container.is-touch .nav-link {
+  touch-action: manipulation;
+}
+
+/* Prevent zoom on input focus for iOS */
+.responsive-container.is-mobile .form-control {
+  font-size: 16px;
+}
+
+/* Enhanced scrolling for mobile */
+.responsive-container.is-mobile .scroll-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.responsive-container.is-mobile .scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area handling for devices with notches */
+@supports (padding: max(0px)) {
+  .responsive-container.is-mobile {
+    padding-left: max(var(--spacing-sm), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-sm), env(safe-area-inset-right));
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 600px) {
+  .responsive-container.is-mobile {
+    padding-top: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+  }
+}

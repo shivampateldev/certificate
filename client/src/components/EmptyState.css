@@ -1,0 +1,110 @@
+/* Empty State Component */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+  text-align: center;
+  background: #FAFAFA;
+  border-radius: 12px;
+  border: 2px dashed #E5E7EB;
+  transition: all 0.3s ease;
+}
+
+.empty-state:hover {
+  border-color: #D1D5DB;
+  background: #F9FAFB;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.empty-state:hover .empty-state-icon {
+  opacity: 0.8;
+}
+
+.empty-state-title {
+  color: #374151;
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.empty-state-description {
+  color: #6B7280;
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 400px;
+}
+
+.empty-state-action {
+  margin-top: 8px;
+}
+
+/* Variants */
+.empty-state.compact {
+  padding: 40px 20px;
+}
+
+.empty-state.compact .empty-state-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.empty-state.compact .empty-state-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.empty-state.compact .empty-state-description {
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .empty-state {
+    padding: 40px 20px;
+  }
+
+  .empty-state-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .empty-state-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .empty-state-description {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .empty-state {
+    padding: 30px 16px;
+  }
+
+  .empty-state-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  .empty-state-title {
+    font-size: 15px;
+  }
+
+  .empty-state-description {
+    font-size: 12px;
+  }
+}

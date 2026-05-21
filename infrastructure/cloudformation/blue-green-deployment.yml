@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Certificate Management Platform - Blue-Green Deployment Configuration'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging, development]
+    Description: Environment name
+
+  ECSClusterName:
+    Type: String
+    Description: Name of the ECS cluster
+
+  ECSServiceName:
+    Type: String
+    Description: Name of the ECS service
+
+  TargetGroupArn:
+    Type: String
+    Description: ARN of the target group
+
+  ListenerArn:
+    Type: String
+    Description: ARN of the ALB listener
+
+Resources:
+  # CodeDeploy Application
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub '${Environment}-certificate-management-app'
+      ComputePlatform: ECS
+
+  # CodeDeploy Deployment Group
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      DeploymentGroupName: !Sub '${Environment}-certificate-management-dg'
+      ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnceBlueGreen
+      BlueGreenDeploymentConfiguration:
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 5
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+        GreenFleetProvisioningOption:
+          Action: COPY_AUTO_SCALING_GROUP
+      ECSServices:
+        - ServiceName: !Ref ECSServiceName
+          ClusterName: !Ref ECSClusterName
+      LoadBalancerInfo:
+        TargetGroupInfoList:
+          - Name: !Select 
+              - 1
+              - !Split 
+                - '/'
+                - !Select 
+                  - 5
+                  - !Split 
+                    - ':'
+                    - !Ref TargetGroupArn
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
+          - DEPLOYMENT_STOP_ON_ALARM
+
+  # CodeDeploy Service Role
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${Environment}-certificate-management-codedeploy-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codedeploy.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
+      Policies:
+        - PolicyName: ECSTaskExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:CreateTaskSet
+                  - ecs:DeleteTaskSet
+                  - ecs:DescribeServices
+                  - ecs:UpdateServicePrimaryTaskSet
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeListeners
+                  - elasticloadbalancing:ModifyListener
+                  - elasticloadbalancing:DescribeRules
+                  - elasticloadbalancing:ModifyRule
+                  - lambda:InvokeFunction
+                  - cloudwatch:DescribeAlarms
+                  - sns:Publish
+                  - s3:GetObject
+                Resource: '*'
+
+  # CloudWatch Alarms for Auto Rollback
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-certificate-management-high-error-rate'
+      AlarmDescription: 'High error rate detected'
+      MetricName: HTTPCode_Target_5XX_Count
+      Namespace: AWS/ApplicationELB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TargetGroup
+          Value: !Select 
+            - 1
+            - !Split 
+              - '/'
+              - !Select 
+                - 5
+                - !Split 
+                  - ':'
+                  - !Ref TargetGroupArn
+      TreatMissingData: notBreaching
+
+  HighResponseTimeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-certificate-management-high-response-time'
+      AlarmDescription: 'High response time detected'
+      MetricName: TargetResponseTime
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TargetGroup
+          Value: !Select [1, !Split ['/', !Select [5, !Split [':', !Ref TargetGroupArn]]]]
+      TreatMissingData: notBreaching
+
+Outputs:
+  CodeDeployApplicationName:
+    Description: CodeDeploy Application Name
+    Value: !Ref CodeDeployApplication
+    Export:
+      Name: !Sub '${Environment}-certificate-management-codedeploy-app'
+
+  CodeDeployDeploymentGroupName:
+    Description: CodeDeploy Deployment Group Name
+    Value: !Ref CodeDeployDeploymentGroup
+    Export:
+      Name: !Sub '${Environment}-certificate-management-codedeploy-dg'
+
+  CodeDeployServiceRoleArn:
+    Description: CodeDeploy Service Role ARN
+    Value: !GetAtt CodeDeployServiceRole.Arn
+    Export:
+      Name: !Sub '${Environment}-certificate-management-codedeploy-role-arn'

@@ -1,0 +1,88 @@
+{
+  "timestamp": "2025-10-30T21:34:46.657Z",
+  "buildInfo": {
+    "nodeVersion": "v22.19.0",
+    "platform": "win32",
+    "buildTime": "2025-10-30T21:34:46.658Z"
+  },
+  "bundleAnalysis": {
+    "css": {
+      "files": [
+        {
+          "name": "main.46610103.css",
+          "size": 231538
+        }
+      ],
+      "totalSize": 231538
+    },
+    "js": {
+      "files": [
+        {
+          "name": "main.0b03bfa8.js",
+          "size": 796132
+        }
+      ],
+      "totalSize": 796132
+    },
+    "media": {
+      "files": [],
+      "totalSize": 0
+    }
+  },
+  "recommendations": [
+    {
+      "type": "CSS",
+      "priority": "high",
+      "message": "CSS bundle is 226.11 KB. Consider CSS purging and code splitting."
+    },
+    {
+      "type": "JavaScript",
+      "priority": "high",
+      "message": "JavaScript bundle is 777.47 KB. Consider code splitting and lazy loading."
+    },
+    {
+      "type": "Performance",
+      "priority": "low",
+      "message": "Enable gzip compression on your web server for better performance."
+    },
+    {
+      "type": "Performance",
+      "priority": "low",
+      "message": "Consider implementing service worker for caching and offline functionality."
+    }
+  ],
+  "optimizationChecklist": [
+    {
+      "item": "CSS purging implemented",
+      "completed": false
+    },
+    {
+      "item": "Code splitting configured",
+      "completed": false
+    },
+    {
+      "item": "Image optimization enabled",
+      "completed": false
+    },
+    {
+      "item": "Gzip compression enabled",
+      "completed": false
+    },
+    {
+      "item": "Service worker implemented",
+      "completed": false
+    },
+    {
+      "item": "Performance monitoring setup",
+      "completed": true
+    },
+    {
+      "item": "Responsive design validated",
+      "completed": true
+    },
+    {
+      "item": "Accessibility compliance checked",
+      "completed": true
+    }
+  ]
+}

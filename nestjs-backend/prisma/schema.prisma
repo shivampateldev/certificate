@@ -1,0 +1,621 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USER & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id                    String      @id @default(cuid())
+  email                 String      @unique
+  username              String      @unique
+  password              String
+  firstName             String?
+  lastName              String?
+  avatar                String?
+  role                  UserRole    @default(USER)
+  status                UserStatus  @default(ACTIVE)
+  emailVerified         Boolean     @default(false)
+  emailVerificationToken String?
+  emailVerificationExpiry DateTime?
+  passwordResetToken    String?
+  passwordResetExpiry   DateTime?
+  lastLogin             DateTime?
+  loginAttempts         Int         @default(0)
+  lockUntil             DateTime?
+  twoFactorEnabled      Boolean     @default(false)
+  twoFactorSecret       String?
+  
+  // Relations
+  organizations         OrganizationMember[]
+  templates             Template[]
+  campaigns             Campaign[]
+  participants          Participant[]
+  certificates          Certificate[]
+  emailLogs             EmailLog[]
+  auditLogs             AuditLog[]
+  apiKeys               ApiKey[]
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  @@index([email])
+  @@index([username])
+  @@index([status])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+// ============================================================================
+// ORGANIZATION & TEAM MANAGEMENT
+// ============================================================================
+
+model Organization {
+  id                    String      @id @default(cuid())
+  name                  String
+  slug                  String      @unique
+  description           String?
+  logo                  String?
+  website               String?
+  email                 String?
+  phone                 String?
+  address               String?
+  city                  String?
+  state                 String?
+  country               String?
+  postalCode            String?
+  status                OrgStatus   @default(ACTIVE)
+  subscriptionTier      SubscriptionTier @default(FREE)
+  subscriptionExpiry    DateTime?
+  maxUsers              Int         @default(5)
+  maxTemplates          Int         @default(10)
+  maxCertificates       Int         @default(1000)
+  
+  // Relations
+  members               OrganizationMember[]
+  templates             Template[]
+  campaigns             Campaign[]
+  participants          Participant[]
+  certificates          Certificate[]
+  emailLogs             EmailLog[]
+  auditLogs             AuditLog[]
+  apiKeys               ApiKey[]
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  @@index([slug])
+  @@index([status])
+}
+
+enum OrgStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum SubscriptionTier {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model OrganizationMember {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  role                  MemberRole  @default(MEMBER)
+  joinedAt              DateTime    @default(now())
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MANAGER
+  MEMBER
+  VIEWER
+}
+
+// ============================================================================
+// TEMPLATES & DESIGN
+// ============================================================================
+
+model Template {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  name                  String
+  description           String?
+  imageUrl              String
+  imageBase64           String?     @db.Text
+  imageMimeType         String      @default("image/png")
+  imageSize             Int?
+  width                 Int         @default(800)
+  height                Int         @default(600)
+  dpi                   Int         @default(300)
+  categories            String[]    @default([])
+  tags                  String[]    @default([])
+  fields                Json        @default("[]")
+  status                TemplateStatus @default(DRAFT)
+  isPublic              Boolean     @default(false)
+  usageCount            Int         @default(0)
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns             Campaign[]
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+}
+
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  DELETED
+}
+
+// ============================================================================
+// CAMPAIGNS & CERTIFICATE GENERATION
+// ============================================================================
+
+model Campaign {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  templateId            String
+  name                  String
+  description           String?
+  status                CampaignStatus @default(DRAFT)
+  totalCertificates     Int         @default(0)
+  generatedCount        Int         @default(0)
+  failedCount           Int         @default(0)
+  sentCount             Int         @default(0)
+  startDate             DateTime?
+  endDate               DateTime?
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template              Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  certificates          Certificate[]
+  emailLogs             EmailLog[]
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([templateId])
+  @@index([status])
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// PARTICIPANTS & CERTIFICATES
+// ============================================================================
+
+model Participant {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  email                 String
+  firstName             String
+  lastName              String
+  customData            Json        @default("{}")
+  status                ParticipantStatus @default(ACTIVE)
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  certificates          Certificate[]
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([email])
+  @@index([status])
+}
+
+enum ParticipantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model Certificate {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  campaignId            String
+  participantId         String
+  certificateNumber     String      @unique
+  fileUrl               String
+  filePath              String
+  fileSize              Int?
+  fileMimeType          String      @default("application/pdf")
+  status                CertificateStatus @default(GENERATED)
+  issuedDate            DateTime    @default(now())
+  expiryDate            DateTime?
+  verificationCode      String      @unique
+  verificationUrl       String?
+  metadata              Json        @default("{}")
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign              Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  participant           Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  emailLogs             EmailLog[]
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([campaignId])
+  @@index([participantId])
+  @@index([status])
+  @@index([verificationCode])
+}
+
+enum CertificateStatus {
+  GENERATED
+  SENT
+  VIEWED
+  DOWNLOADED
+  VERIFIED
+  REVOKED
+  EXPIRED
+}
+
+// ============================================================================
+// EMAIL & COMMUNICATION
+// ============================================================================
+
+model EmailTemplate {
+  id                    String      @id @default(cuid())
+  name                  String
+  subject               String
+  htmlContent           String      @db.Text
+  textContent           String?     @db.Text
+  variables             String[]    @default([])
+  isDefault             Boolean     @default(false)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([name])
+}
+
+model EmailLog {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  campaignId            String?
+  certificateId         String?
+  recipientEmail        String
+  subject               String
+  status                EmailStatus @default(PENDING)
+  provider              EmailProvider @default(SMTP)
+  messageId             String?
+  errorMessage          String?
+  retryCount            Int         @default(0)
+  maxRetries            Int         @default(3)
+  sentAt                DateTime?
+  deliveredAt           DateTime?
+  openedAt              DateTime?
+  clickedAt             DateTime?
+  bounceType            String?
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign              Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  certificate           Certificate? @relation(fields: [certificateId], references: [id], onDelete: SetNull)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([campaignId])
+  @@index([certificateId])
+  @@index([status])
+  @@index([recipientEmail])
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+  COMPLAINED
+  UNSUBSCRIBED
+}
+
+enum EmailProvider {
+  SMTP
+  SENDGRID
+  MAILGUN
+  AWS_SES
+}
+
+// ============================================================================
+// ANALYTICS & REPORTING
+// ============================================================================
+
+model Analytics {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  date                  DateTime
+  certificatesGenerated Int         @default(0)
+  certificatesSent      Int         @default(0)
+  certificatesViewed    Int         @default(0)
+  certificatesDownloaded Int        @default(0)
+  emailsSent            Int         @default(0)
+  emailsDelivered       Int         @default(0)
+  emailsFailed          Int         @default(0)
+  emailsOpened          Int         @default(0)
+  emailsClicked         Int         @default(0)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@unique([organizationId, date])
+  @@index([organizationId])
+  @@index([date])
+}
+
+model Report {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  name                  String
+  type                  ReportType
+  filters               Json        @default("{}")
+  data                  Json        @default("{}")
+  fileUrl               String?
+  status                ReportStatus @default(PENDING)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([type])
+}
+
+enum ReportType {
+  CERTIFICATES_GENERATED
+  CERTIFICATES_SENT
+  EMAIL_DELIVERY
+  CAMPAIGN_PERFORMANCE
+  PARTICIPANT_ACTIVITY
+  CUSTOM
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ============================================================================
+// AUDIT & SECURITY
+// ============================================================================
+
+model AuditLog {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  action                String
+  resource              String
+  resourceId            String?
+  changes               Json?
+  ipAddress             String?
+  userAgent             String?
+  status                AuditStatus @default(SUCCESS)
+  errorMessage          String?
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt             DateTime    @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+}
+
+enum AuditStatus {
+  SUCCESS
+  FAILURE
+  WARNING
+}
+
+model ApiKey {
+  id                    String      @id @default(cuid())
+  organizationId        String
+  userId                String
+  name                  String
+  key                   String      @unique
+  secret                String
+  permissions           String[]    @default([])
+  lastUsedAt            DateTime?
+  expiresAt             DateTime?
+  isActive              Boolean     @default(true)
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([key])
+}
+
+// ============================================================================
+// BACKGROUND JOBS
+// ============================================================================
+
+model Job {
+  id                    String      @id @default(cuid())
+  type                  JobType
+  status                JobStatus   @default(PENDING)
+  data                  Json
+  result                Json?
+  error                 String?
+  attempts              Int         @default(0)
+  maxAttempts           Int         @default(3)
+  nextRetryAt           DateTime?
+  completedAt           DateTime?
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([nextRetryAt])
+}
+
+enum JobType {
+  GENERATE_CERTIFICATE
+  SEND_EMAIL
+  GENERATE_REPORT
+  PROCESS_UPLOAD
+  CLEANUP_FILES
+  SYNC_ANALYTICS
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// VERIFICATION & VALIDATION
+// ============================================================================
+
+model CertificateVerification {
+  id                    String      @id @default(cuid())
+  certificateId         String      @unique
+  verificationCode      String      @unique
+  verificationUrl       String
+  isVerified            Boolean     @default(false)
+  verifiedAt            DateTime?
+  verifiedIp            String?
+  verifiedUserAgent      String?
+  expiresAt             DateTime
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([verificationCode])
+  @@index([isVerified])
+}
+
+// ============================================================================
+// SETTINGS & CONFIGURATION
+// ============================================================================
+
+model SystemSettings {
+  id                    String      @id @default(cuid())
+  key                   String      @unique
+  value                 String      @db.Text
+  description           String?
+  category              String?
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
+model OrganizationSettings {
+  id                    String      @id @default(cuid())
+  organizationId        String      @unique
+  smtpHost              String?
+  smtpPort              Int?
+  smtpUser              String?
+  smtpPassword          String?
+  smtpSecure            Boolean     @default(false)
+  fromEmail             String?
+  fromName              String?
+  replyToEmail          String?
+  webhookUrl            String?
+  webhookSecret         String?
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([organizationId])
+}

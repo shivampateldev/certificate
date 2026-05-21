@@ -1,0 +1,205 @@
+.batch-creator {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.batch-creator-header {
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-creator-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.step-indicator {
+  display: flex;
+  gap: 10px;
+}
+
+.step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.step.active {
+  background: #1976d2;
+  color: white;
+}
+
+.error-message {
+  margin: 20px;
+  padding: 12px;
+  background: #ffebee;
+  color: #d32f2f;
+  border-radius: 6px;
+  border-left: 4px solid #d32f2f;
+}
+
+.batch-creator-content {
+  padding: 20px;
+  min-height: 400px;
+}
+
+.step-content h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.step-content p {
+  margin: 0 0 20px 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.review-section {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 20px;
+}
+
+.review-item {
+  margin-bottom: 16px;
+}
+
+.review-item:last-child {
+  margin-bottom: 0;
+}
+
+.review-item label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.review-value {
+  color: #666;
+  font-size: 14px;
+}
+
+.batch-name-input {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.batch-name-input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.batch-name-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.batch-creator-actions {
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.batch-creator-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.back-btn {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.back-btn:hover:not(:disabled) {
+  background: #bbdefb;
+}
+
+.next-btn, .create-btn {
+  background: #1976d2;
+  color: white;
+}
+
+.next-btn:hover:not(:disabled), .create-btn:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.batch-creator-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .batch-creator {
+    margin: 10px;
+    border-radius: 6px;
+  }
+  
+  .batch-creator-header {
+    padding: 15px;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .batch-creator-header h2 {
+    font-size: 20px;
+  }
+  
+  .batch-creator-content {
+    padding: 15px;
+    min-height: 300px;
+  }
+  
+  .step-content h3 {
+    font-size: 18px;
+  }
+  
+  .batch-creator-actions {
+    padding: 15px;
+    flex-wrap: wrap;
+  }
+  
+  .batch-creator-actions button {
+    flex: 1;
+    min-width: 100px;
+  }
+}

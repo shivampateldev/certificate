@@ -1,0 +1,109 @@
+.progress-container {
+  width: 100%;
+}
+
+.progress-label {
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-bar {
+  width: 100%;
+  background-color: var(--gray-200);
+  border-radius: 50px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Size variants */
+.progress-bar.small {
+  height: 8px;
+}
+
+.progress-bar.medium {
+  height: 12px;
+}
+
+.progress-bar.large {
+  height: 20px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Color variants using CSS variables */
+.progress-bar.primary .progress-fill {
+  background: var(--gradient-primary);
+}
+
+.progress-bar.secondary .progress-fill {
+  background: var(--gray-600);
+}
+
+.progress-bar.success .progress-fill {
+  background: linear-gradient(90deg, var(--success-500) 0%, #20c997 100%);
+}
+
+.progress-bar.warning .progress-fill {
+  background: linear-gradient(90deg, var(--warning-500) 0%, #fd7e14 100%);
+}
+
+.progress-bar.danger .progress-fill {
+  background: linear-gradient(90deg, var(--error-500) 0%, #e83e8c 100%);
+}
+
+.progress-text {
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+.progress-bar.small .progress-text {
+  font-size: 0.6rem;
+}
+
+.progress-bar.large .progress-text {
+  font-size: 0.8rem;
+}
+
+/* Animated variant */
+.progress-bar.animated .progress-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

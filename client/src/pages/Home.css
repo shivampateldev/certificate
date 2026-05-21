@@ -1,0 +1,207 @@
+/* Dashboard Stylesheet - Premium SaaS Feel */
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-page {
+  width: 100%;
+  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── FEATURES GRID ─── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.feature-card {
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  border: 1px solid var(--border);
+  background: var(--bg-white);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.feature-purple::before { background: var(--primary-gradient); }
+.feature-cyan::before { background: linear-gradient(90deg, #06B6D4, #0891B2); }
+.feature-green::before { background: linear-gradient(90deg, #10B981, #059669); }
+.feature-amber::before { background: linear-gradient(90deg, #F59E0B, #D97706); }
+.feature-red::before { background: linear-gradient(90deg, #EF4444, #DC2626); }
+
+.feature-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: rgba(79, 70, 229, 0.15);
+}
+
+.feature-card-icon {
+  font-size: 32px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+  flex-shrink: 0;
+  transition: var(--transition-smooth);
+}
+
+.feature-card:hover .feature-card-icon {
+  transform: scale(1.08) rotate(2deg);
+}
+
+.feature-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-card-body h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.feature-card-body p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.feature-card-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  width: 100%;
+}
+
+/* ─── STEPS GRID ─── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.step-card {
+  text-align: center;
+  padding: 40px 24px 28px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: var(--transition-smooth);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.step-card:hover {
+  background: var(--bg-white);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.step-card .step-number {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  background: var(--primary-gradient);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: var(--shadow-primary);
+}
+
+.step-icon {
+  font-size: 36px;
+  display: inline-block;
+  transition: var(--transition-smooth);
+  line-height: 1;
+}
+
+.step-card:hover .step-icon {
+  transform: scale(1.12) translateY(-2px);
+}
+
+.step-card h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.step-card p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .feature-card {
+    padding: 24px 20px;
+  }
+  .step-card {
+    padding: 36px 16px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+  .feature-card {
+    gap: 12px;
+  }
+  .feature-card-body h3 {
+    font-size: 14px;
+  }
+}
