@@ -4,11 +4,39 @@
  */
 
 const Busboy = require('busboy');
+const fs = require('fs');
+const path = require('path');
 const { TemplateModel, TemplateFieldModel } = require('./models');
 const FileHandler = require('./utils/fileHandler');
 const Validators = require('./utils/validators');
 
 module.exports.config = { api: { bodyParser: false } };
+
+// Helper to get request body (compat with Express and Serverless)
+async function getRequestBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    return req.body;
+  }
+  if (req.body && typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      return req.body;
+    }
+  }
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', err => reject(err));
+  });
+}
 
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -221,10 +249,83 @@ async function handler(req, res) {
               height
             });
 
+            let autoFields = [];
+            if (ext === 'pdf') {
+              try {
+                const { scanPDFPlaceholders } = require('./utils/pdfParser');
+                autoFields = await scanPDFPlaceholders(fileBuffer);
+              } catch (scanErr) {
+                console.error('Error auto-scanning PDF placeholders:', scanErr.message);
+              }
+            }
+
+            // Check filename for placeholders as a primary image/name fallback
+            if (autoFields.length === 0) {
+              const nameMatches = [...fileName.matchAll(/\{\{\s*([a-zA-Z0-9_(),.-]+)\s*\}\}/g)];
+              if (nameMatches.length > 0) {
+                autoFields = nameMatches.map((m, idx) => ({
+                  field_name: m[1].trim(),
+                  x: 150 + idx * 120,
+                  y: 350,
+                  font_size: 24,
+                  font_family: 'Arial',
+                  alignment: 'center',
+                  color: '#000000'
+                }));
+              }
+            }
+
+            // Fallback: scan binary buffer for UTF-8 metadata placeholders
+            if (autoFields.length === 0) {
+              try {
+                const fileStr = fileBuffer.toString('utf8', 0, Math.min(fileBuffer.length, 1024 * 1024));
+                const metaMatches = [...fileStr.matchAll(/\{\{\s*([a-zA-Z0-9_(),.-]+)\s*\}\}/g)];
+                if (metaMatches.length > 0) {
+                  const uniqueMeta = Array.from(new Set(metaMatches.map(m => m[1].trim())));
+                  autoFields = uniqueMeta.map((placeholder, idx) => ({
+                    field_name: placeholder,
+                    x: 200 + idx * 100,
+                    y: 380,
+                    font_size: 28,
+                    font_family: 'Arial',
+                    alignment: 'center',
+                    color: '#000000'
+                  }));
+                }
+              } catch (err) {
+                console.error('Binary metadata scanning failed:', err);
+              }
+            }
+
+            // Flawless default placeholders if completely blank
+            if (autoFields.length === 0) {
+              autoFields = [
+                { field_name: 'name', x: 400, y: 250, font_size: 32, font_family: 'Arial', alignment: 'center', color: '#000000' },
+                { field_name: 'course', x: 400, y: 320, font_size: 24, font_family: 'Arial', alignment: 'center', color: '#000000' },
+                { field_name: 'date', x: 400, y: 390, font_size: 20, font_family: 'Arial', alignment: 'center', color: '#000000' },
+                { field_name: 'certificate_id', x: 400, y: 460, font_size: 16, font_family: 'Arial', alignment: 'center', color: '#000000' }
+              ];
+            }
+
+            // Save detected placeholders into database
+            for (const field of autoFields) {
+              await TemplateFieldModel.create({
+                template_id: template.id,
+                field_name: field.field_name,
+                x: field.x,
+                y: field.y,
+                font_size: field.font_size,
+                font_family: field.font_family,
+                alignment: field.alignment || 'center',
+                color: field.color || '#000000'
+              });
+            }
+
             return res.status(201).json({
               success: true,
               data: template,
-              message: 'Template uploaded successfully. Now add fields to your template.'
+              autoFieldsCount: autoFields.length,
+              message: `Template uploaded successfully. Automatically detected and registered ${autoFields.length} placeholders!`
             });
           } catch (error) {
             return res.status(500).json({
@@ -238,52 +339,88 @@ async function handler(req, res) {
       });
     }
 
+    // POST /api/templates/mapping - Bulk save mapping fields
+    if (urlPath === '/api/templates/mapping' && method === 'POST') {
+      try {
+        const body = await getRequestBody(req);
+        const { template_id, fields } = body;
+        if (!template_id) {
+          return res.status(400).json({ success: false, error: { message: 'template_id is required' } });
+        }
+
+        // Clear existing fields
+        await TemplateFieldModel.deleteByTemplateId(template_id);
+
+        const createdFields = [];
+        if (fields && Array.isArray(fields)) {
+          for (const f of fields) {
+            const field = await TemplateFieldModel.create({
+              template_id,
+              field_name: f.fieldName || f.field_name,
+              x: parseInt(f.x) || 0,
+              y: parseInt(f.y) || 0,
+              font_family: f.fontFamily || f.font_family || 'Arial',
+              font_size: parseInt(f.fontSize || f.font_size) || 24,
+              font_weight: f.fontWeight || f.font_weight || 'normal',
+              color: f.fontColor || f.color || '#000000',
+              alignment: f.alignment || 'left'
+            });
+            createdFields.push(field);
+          }
+        }
+
+        return res.json({
+          success: true,
+          message: `Saved ${createdFields.length} mapped fields successfully!`,
+          data: createdFields
+        });
+      } catch (error) {
+        return res.status(500).json({ success: false, error: { message: error.message } });
+      }
+    }
+
     // POST /api/templates/:id/fields - Add field to template
     const fieldMatch = urlPath.match(/^\/api\/templates\/([^/]+)\/fields$/);
     if (fieldMatch && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const fieldData = JSON.parse(body);
-          const templateId = fieldMatch[1];
+      try {
+        const body = await getRequestBody(req);
+        const fieldData = body;
+        const templateId = fieldMatch[1];
 
-          // Verify template exists
-          const template = await TemplateModel.getById(templateId);
-          if (!template) {
-            return res.status(404).json({
-              success: false,
-              error: { message: 'Template not found' }
-            });
-          }
-
-          // Validate field data
-          const validation = Validators.validateTemplateField(fieldData);
-          if (!validation.isValid) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'Validation failed', details: validation.errors }
-            });
-          }
-
-          // Create field
-          const field = await TemplateFieldModel.create({
-            ...fieldData,
-            template_id: templateId
-          });
-
-          return res.status(201).json({
-            success: true,
-            data: field
-          });
-        } catch (error) {
-          return res.status(500).json({
+        // Verify template exists
+        const template = await TemplateModel.getById(templateId);
+        if (!template) {
+          return res.status(404).json({
             success: false,
-            error: { message: error.message }
+            error: { message: 'Template not found' }
           });
         }
-      });
-      return;
+
+        // Validate field data
+        const validation = Validators.validateTemplateField(fieldData);
+        if (!validation.isValid) {
+          return res.status(400).json({
+            success: false,
+            error: { message: 'Validation failed', details: validation.errors }
+          });
+        }
+
+        // Create field
+        const field = await TemplateFieldModel.create({
+          ...fieldData,
+          template_id: templateId
+        });
+
+        return res.status(201).json({
+          success: true,
+          data: field
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     // GET /api/templates/:id/fields - Get template fields
@@ -307,26 +444,102 @@ async function handler(req, res) {
     // PUT /api/templates/:id/fields/:fieldId - Update field
     const updateFieldMatch = urlPath.match(/^\/api\/templates\/([^/]+)\/fields\/([^/]+)$/);
     if (updateFieldMatch && method === 'PUT') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const fieldData = JSON.parse(body);
-          const fieldId = updateFieldMatch[2];
+      try {
+        const body = await getRequestBody(req);
+        const fieldData = body;
+        const fieldId = updateFieldMatch[2];
 
-          const field = await TemplateFieldModel.update(fieldId, fieldData);
-          return res.json({
-            success: true,
-            data: field
-          });
-        } catch (error) {
-          return res.status(500).json({
-            success: false,
-            error: { message: error.message }
-          });
-        }
+        const field = await TemplateFieldModel.update(fieldId, fieldData);
+        return res.json({
+          success: true,
+          data: field
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
+    }
+
+    // GET /api/fonts - List custom fonts
+    if (urlPath === '/api/fonts' && method === 'GET') {
+      const { getCustomFonts } = require('./utils/fontLoader');
+      const fonts = getCustomFonts();
+      return res.json({
+        success: true,
+        data: fonts.map(f => ({ name: f.name, fileName: f.fileName, format: f.format }))
       });
-      return;
+    }
+
+    // POST /api/fonts/upload - Upload custom font file
+    if (urlPath === '/api/fonts/upload' && method === 'POST') {
+      return new Promise((resolve) => {
+        const busboy = Busboy({ headers: req.headers });
+        let fileBuffer = null;
+        let fileName = '';
+        let hasError = false;
+
+        busboy.on('file', (fieldname, file, info) => {
+          fileName = info.filename;
+          const ext = path.extname(fileName).toLowerCase();
+          if (ext !== '.ttf' && ext !== '.otf') {
+            hasError = true;
+            res.status(400).json({
+              success: false,
+              error: { message: 'Only .ttf and .otf font formats are supported' }
+            });
+            file.resume();
+            resolve();
+            return;
+          }
+
+          const chunks = [];
+          file.on('data', d => chunks.push(d));
+          file.on('end', () => {
+            fileBuffer = Buffer.concat(chunks);
+          });
+        });
+
+        busboy.on('finish', () => {
+          if (hasError) return;
+          if (!fileBuffer) {
+            res.status(400).json({
+              success: false,
+              error: { message: 'No file received' }
+            });
+            resolve();
+            return;
+          }
+
+          try {
+            const { getFontsDir } = require('./utils/fontLoader');
+            const fontsDir = getFontsDir();
+            if (!fs.existsSync(fontsDir)) {
+              fs.mkdirSync(fontsDir, { recursive: true });
+            }
+
+            fs.writeFileSync(path.join(fontsDir, fileName), fileBuffer);
+            res.json({
+              success: true,
+              message: 'Font uploaded successfully',
+              data: {
+                name: path.basename(fileName, path.extname(fileName)),
+                fileName
+              }
+            });
+            resolve();
+          } catch (err) {
+            res.status(500).json({
+              success: false,
+              error: { message: err.message }
+            });
+            resolve();
+          }
+        });
+
+        req.pipe(busboy);
+      });
     }
 
     // DELETE /api/templates/:id/fields/:fieldId - Delete field
@@ -348,24 +561,20 @@ async function handler(req, res) {
 
     // PUT /api/templates/:id - Update template
     if (templateMatch && method === 'PUT') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const template = await TemplateModel.update(templateMatch[1], data);
-          return res.json({
-            success: true,
-            data: template
-          });
-        } catch (error) {
-          return res.status(500).json({
-            success: false,
-            error: { message: error.message }
-          });
-        }
-      });
-      return;
+      try {
+        const body = await getRequestBody(req);
+        const data = body;
+        const template = await TemplateModel.update(templateMatch[1], data);
+        return res.json({
+          success: true,
+          data: template
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     // DELETE /api/templates/:id - Delete template

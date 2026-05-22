@@ -80,19 +80,15 @@ function Sidebar({ open, onClose }) {
 }
 
 function Topbar({ onMenuClick }) {
-  const location = useLocation();
-  const title = pageTitles[location.pathname] || 'Certificate Platform';
   return (
     <div className="topbar">
       <div className="topbar-left">
         <button className="mobile-menu-btn" onClick={onMenuClick} aria-label="Open menu">☰</button>
-        <div>
-          <div className="topbar-title">{title}</div>
-        </div>
       </div>
-      <div className="topbar-right">
-        <span className="topbar-badge">v2.0</span>
+      <div className="topbar-center">
+        <img src="/header-banner.png" alt="Silver Oak University & IEEE Logos" className="header-logo-img" />
       </div>
+      <div className="topbar-right"></div>
     </div>
   );
 }
@@ -102,22 +98,27 @@ function AppLayout() {
 
   return (
     <div className="App">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="main-wrapper">
-        <Topbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="main-content" id="main-content" role="main">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/participants" element={<ParticipantManagement />} />
-            <Route path="/generate" element={<CertificateGenerator />} />
-            <Route path="/templates" element={<TemplateManagement />} />
-            <Route path="/mass-mailer" element={<MassMailer />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/performance-test" element={<PerformanceTest />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
+      <Topbar onMenuClick={() => setSidebarOpen(true)} />
+      <div className="app-body-container">
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="main-wrapper">
+          <main className="main-content" id="main-content" role="main">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/participants" element={<ParticipantManagement />} />
+              <Route path="/generate" element={<CertificateGenerator />} />
+              <Route path="/templates" element={<TemplateManagement />} />
+              <Route path="/mass-mailer" element={<MassMailer />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/performance-test" element={<PerformanceTest />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+        </div>
       </div>
+      <footer className="app-footer">
+        <img src="/footer-banner.png" alt="Footer Banner" className="footer-banner-img" />
+      </footer>
       <Toaster
         position="top-right"
         toastOptions={{

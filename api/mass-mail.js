@@ -8,7 +8,9 @@ const {
   EmailLogModel,
   ParticipantModel,
   GeneratedCertificateModel,
-  CertificateGenerationModel
+  CertificateGenerationModel,
+  TemplateModel,
+  TemplateFieldModel
 } = require('./models');
 const Validators = require('./utils/validators');
 
@@ -45,6 +47,140 @@ function initializeTransporter() {
 
 // Initialize on module load
 initializeTransporter();
+
+// Helper to get appropriate embedded font based on family and style
+async function getEmbeddedFont(pdfDoc, fontFamily, bold, italic) {
+  try {
+    const fontMap = {
+      'Arial': 'Helvetica',
+      'Helvetica': 'Helvetica',
+      'Times New Roman': 'Times-Roman',
+      'Georgia': 'Times-Roman',
+      'Verdana': 'Helvetica',
+      'Trebuchet MS': 'Helvetica',
+      'Impact': 'Helvetica-Bold',
+      'Comic Sans MS': 'Helvetica'
+    };
+    
+    const baseFontName = fontMap[fontFamily] || 'Helvetica';
+    
+    if (fontFamily === 'Impact') {
+      return await pdfDoc.embedFont('Helvetica-Bold');
+    }
+    
+    let fontName = baseFontName;
+    if (baseFontName === 'Times-Roman') {
+      if (bold && italic) {
+        fontName = 'Times-BoldItalic';
+      } else if (bold) {
+        fontName = 'Times-Bold';
+      } else if (italic) {
+        fontName = 'Times-Italic';
+      }
+    } else {
+      if (bold && italic) {
+        fontName = 'Helvetica-BoldOblique';
+      } else if (bold) {
+        fontName = 'Helvetica-Bold';
+      } else if (italic) {
+        fontName = 'Helvetica-Oblique';
+      }
+    }
+    
+    return await pdfDoc.embedFont(fontName);
+  } catch (error) {
+    console.warn(`Font embedding failed for ${fontFamily}, using Helvetica:`, error.message);
+    return await pdfDoc.embedFont('Helvetica');
+  }
+}
+
+// Helper to convert hex to rgb
+function hexToRgb(hex) {
+  if (!hex) return { r: 0, g: 0, b: 0 };
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 0, g: 0, b: 0 };
+}
+
+// Generate certificate PDF dynamically using a template and recipient data
+async function generateCertificateFromTemplate(template, fields, recipient) {
+  const { PDFDocument, rgb } = require('pdf-lib');
+  const FileHandler = require('./utils/fileHandler');
+  const fs = require('fs');
+
+  if (!template.file_path || !FileHandler.fileExists(template.file_path)) {
+    throw new Error(`Template background file not found at: ${template.file_path}`);
+  }
+
+  const existingPdfBytes = fs.readFileSync(template.file_path);
+  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  const pages = pdfDoc.getPages();
+  const firstPage = pages[0];
+  const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+
+  const canvasWidth = template.width || 800;
+  const canvasHeight = template.height || 600;
+  const scaleX = pageWidth / canvasWidth;
+  const scaleY = pageHeight / canvasHeight;
+
+  for (const field of fields) {
+    const fieldName = field.field_name.toLowerCase();
+    let text = '';
+
+    if (fieldName === 'name') {
+      text = recipient.name || '';
+    } else if (fieldName === 'email') {
+      text = recipient.email || '';
+    } else if (fieldName === 'certificate_id' || fieldName === 'certificateid') {
+      text = recipient.certificate_id || recipient.certificateId || '';
+    } else if (recipient[field.field_name]) {
+      text = recipient[field.field_name];
+    } else {
+      text = field.field_name
+        .replace(/\{\{name\}\}/gi, recipient.name || '')
+        .replace(/\{\{email\}\}/gi, recipient.email || '')
+        .replace(/\{\{certificate_id\}\}/gi, recipient.certificate_id || recipient.certificateId || '')
+        .replace(/\{\{certificateid\}\}/gi, recipient.certificate_id || recipient.certificateId || '');
+    }
+
+    if (!text) continue;
+
+    const bold = field.font_weight === 'bold';
+    const italic = field.font_style === 'italic' || field.font_weight === 'italic';
+    
+    const font = await getEmbeddedFont(pdfDoc, field.font_family || 'Arial', bold, italic);
+    const fontSize = (field.font_size || 24) * Math.min(scaleX, scaleY);
+    const colorRgb = hexToRgb(field.color || '#000000');
+    
+    let drawX = field.x * scaleX;
+    
+    if (field.alignment === 'center') {
+      const textWidth = font.widthOfTextAtSize(text, fontSize);
+      const fieldWidth = (field.width || 200) * scaleX;
+      drawX = (field.x * scaleX) + (fieldWidth - textWidth) / 2;
+    } else if (field.alignment === 'right') {
+      const textWidth = font.widthOfTextAtSize(text, fontSize);
+      const fieldWidth = (field.width || 200) * scaleX;
+      drawX = (field.x * scaleX) + fieldWidth - textWidth;
+    }
+
+    const drawY = pageHeight - (field.y * scaleY);
+
+    firstPage.drawText(text, {
+      x: drawX,
+      y: drawY,
+      size: fontSize,
+      font: font,
+      color: rgb(colorRgb.r / 255, colorRgb.g / 255, colorRgb.b / 255)
+    });
+  }
+
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
+}
 
 /**
  * Send a raw RFC 2822 email via Gmail REST API using an OAuth2 access token.
@@ -94,6 +230,32 @@ function callGmailAPI(accessToken, encodedEmail) {
   });
 }
 
+// Helper to get request body (compat with Express and Serverless)
+async function getRequestBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    return req.body;
+  }
+  if (req.body && typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      return req.body;
+    }
+  }
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', err => reject(err));
+  });
+}
+
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -108,135 +270,127 @@ async function handler(req, res) {
   try {
     // POST /api/mass-mail/preview - Preview email for participant
     if (urlPath === '/api/mass-mail/preview' && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const { participant_id, subject, body: emailBody } = JSON.parse(body);
+      try {
+        const body = await getRequestBody(req);
+        const { participant_id, subject, body: emailBody } = body;
 
-          if (!participant_id) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'participant_id is required' }
-            });
-          }
-
-          // Get participant
-          const participant = await ParticipantModel.getById(participant_id);
-          if (!participant) {
-            return res.status(404).json({
-              success: false,
-              error: { message: 'Participant not found' }
-            });
-          }
-
-          // Replace template variables
-          const replacements = {
-            '{{name}}': participant.name,
-            '{{email}}': participant.email,
-            '{{certificate_id}}': participant.certificate_id,
-            ...Object.entries(participant.custom_fields || {}).reduce((acc, [key, val]) => {
-              acc[`{{${key}}}`] = val;
-              return acc;
-            }, {})
-          };
-
-          let renderedSubject = subject;
-          let renderedBody = emailBody;
-
-          for (const [placeholder, value] of Object.entries(replacements)) {
-            renderedSubject = renderedSubject.replace(new RegExp(placeholder, 'g'), value || '');
-            renderedBody = renderedBody.replace(new RegExp(placeholder, 'g'), value || '');
-          }
-
-          return res.json({
-            success: true,
-            data: {
-              participant,
-              preview: {
-                subject: renderedSubject,
-                body: renderedBody,
-                to: participant.email
-              }
-            }
-          });
-        } catch (error) {
-          return res.status(500).json({
+        if (!participant_id) {
+          return res.status(400).json({
             success: false,
-            error: { message: error.message }
+            error: { message: 'participant_id is required' }
           });
         }
-      });
-      return;
+
+        // Get participant
+        const participant = await ParticipantModel.getById(participant_id);
+        if (!participant) {
+          return res.status(404).json({
+            success: false,
+            error: { message: 'Participant not found' }
+          });
+        }
+
+        // Replace template variables
+        const replacements = {
+          '{{name}}': participant.name,
+          '{{email}}': participant.email,
+          '{{certificate_id}}': participant.certificate_id,
+          ...Object.entries(participant.custom_fields || {}).reduce((acc, [key, val]) => {
+            acc[`{{${key}}}`] = val;
+            return acc;
+          }, {})
+        };
+
+        let renderedSubject = subject;
+        let renderedBody = emailBody;
+
+        for (const [placeholder, value] of Object.entries(replacements)) {
+          renderedSubject = renderedSubject.replace(new RegExp(placeholder, 'g'), value || '');
+          renderedBody = renderedBody.replace(new RegExp(placeholder, 'g'), value || '');
+        }
+
+        return res.json({
+          success: true,
+          data: {
+            participant,
+            preview: {
+              subject: renderedSubject,
+              body: renderedBody,
+              to: participant.email
+            }
+          }
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     // POST /api/mass-mail/campaign - Create email campaign
     if (urlPath === '/api/mass-mail/campaign' && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const { batch_id, generation_id, subject, body: emailBody, sender_email } = JSON.parse(body);
+      try {
+        const body = await getRequestBody(req);
+        const { batch_id, generation_id, subject, body: emailBody, sender_email } = body;
 
-          if (!batch_id || !subject || !emailBody || !sender_email) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'batch_id, subject, body, and sender_email are required' }
-            });
-          }
-
-          // Validate email
-          if (!Validators.isValidEmail(sender_email)) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'Invalid sender email' }
-            });
-          }
-
-          // Get participants in batch
-          const participants = await ParticipantModel.getByBatchId(batch_id);
-          if (participants.length === 0) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'No participants in batch' }
-            });
-          }
-
-          // Create campaign
-          const campaign = await EmailCampaignModel.create({
-            batch_id,
-            generation_id,
-            subject,
-            body: emailBody,
-            sender_email,
-            recipient_count: participants.length
-          });
-
-          // Create email logs for each participant
-          for (const participant of participants) {
-            await EmailLogModel.create({
-              campaign_id: campaign.id,
-              participant_id: participant.id,
-              recipient_email: participant.email,
-              status: 'pending'
-            });
-          }
-
-          return res.status(201).json({
-            success: true,
-            data: {
-              campaign,
-              recipient_count: participants.length
-            }
-          });
-        } catch (error) {
-          return res.status(500).json({
+        if (!batch_id || !subject || !emailBody || !sender_email) {
+          return res.status(400).json({
             success: false,
-            error: { message: error.message }
+            error: { message: 'batch_id, subject, body, and sender_email are required' }
           });
         }
-      });
-      return;
+
+        // Validate email
+        if (!Validators.isValidEmail(sender_email)) {
+          return res.status(400).json({
+            success: false,
+            error: { message: 'Invalid sender email' }
+          });
+        }
+
+        // Get participants in batch
+        const participants = await ParticipantModel.getByBatchId(batch_id);
+        if (participants.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: { message: 'No participants in batch' }
+          });
+        }
+
+        // Create campaign
+        const campaign = await EmailCampaignModel.create({
+          batch_id,
+          generation_id,
+          subject,
+          body: emailBody,
+          sender_email,
+          recipient_count: participants.length
+        });
+
+        // Create email logs for each participant
+        for (const participant of participants) {
+          await EmailLogModel.create({
+            campaign_id: campaign.id,
+            participant_id: participant.id,
+            recipient_email: participant.email,
+            status: 'pending'
+          });
+        }
+
+        return res.status(201).json({
+          success: true,
+          data: {
+            campaign,
+            recipient_count: participants.length
+          }
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     // GET /api/mass-mail/campaign/:campaignId - Get campaign details
@@ -289,6 +443,7 @@ async function handler(req, res) {
         let senderDisplayName = '';
         let accessToken = '';
         let senderEmail = '';
+        let templateId = '';
 
         busboy.on('field', (fieldname, val) => {
           if (fieldname === 'subject') emailSubject = val;
@@ -296,6 +451,7 @@ async function handler(req, res) {
           if (fieldname === 'senderDisplayName') senderDisplayName = val;
           if (fieldname === 'accessToken') accessToken = val;
           if (fieldname === 'senderEmail') senderEmail = val;
+          if (fieldname === 'templateId') templateId = val;
         });
 
         let activeStreams = 0;
@@ -307,15 +463,21 @@ async function handler(req, res) {
           }
         }
 
+        const customAttachments = [];
         busboy.on('file', (fieldname, file, info) => {
           activeStreams++;
           const chunks = [];
           file.on('data', d => chunks.push(d));
           file.on('end', () => {
             if (fieldname === 'zipfile') zipBuffer = Buffer.concat(chunks);
-            if (fieldname === 'csvfile') {
+            else if (fieldname === 'csvfile') {
               csvBuffer = Buffer.concat(chunks);
               csvFileName = info.filename || 'recipients.csv';
+            } else if (fieldname === 'custom_attachments' || fieldname === 'custom_attachment' || fieldname.startsWith('custom_attachment_')) {
+              customAttachments.push({
+                filename: info.filename,
+                content: Buffer.concat(chunks)
+              });
             }
             activeStreams--;
             checkAndProcess();
@@ -374,6 +536,37 @@ async function handler(req, res) {
               }
             }
 
+            // Load template and fields if templateId is provided
+            let template = null;
+            let fields = [];
+            if (templateId) {
+              try {
+                template = await TemplateModel.getById(templateId);
+                if (template) {
+                  fields = await TemplateFieldModel.getByTemplateId(templateId);
+                  console.log(`Successfully loaded template "${template.template_name}" with ${fields.length} fields for mass mailing`);
+                } else {
+                  console.warn(`Template with ID "${templateId}" was not found.`);
+                }
+              } catch (err) {
+                console.error(`Failed to load template "${templateId}":`, err.message);
+              }
+            }
+
+            // Create overall EmailCampaign record in Firestore
+            const campaign = await EmailCampaignModel.create({
+              batch_id: 'upload_' + Date.now(),
+              generation_id: null,
+              subject: emailSubject,
+              body: emailBody,
+              sender_email: senderEmail || 'demo@ificatemanagement.com',
+              recipient_count: recipients.length
+            });
+
+            await EmailCampaignModel.update(campaign.id, {
+              status: 'sending'
+            });
+
             const isDemoMode = !accessToken || accessToken === 'demo_token';
             let sentCount = 0;
             let failedCount = 0;
@@ -389,10 +582,55 @@ async function handler(req, res) {
                   status: 'simulated',
                   message: 'Demo mode: email not actually sent'
                 });
+
+                // Create or fetch Participant record
+                let participantObj = await ParticipantModel.getByEmail(recipient.email);
+                const certId = recipient.certificate_id || recipient.certificateId || `CERT-${Date.now()}`;
+                if (!participantObj) {
+                  participantObj = await ParticipantModel.create({
+                    name: recipient.name,
+                    email: recipient.email,
+                    certificate_id: certId
+                  });
+                }
+
+                // If template mode, generate simulated certificate
+                if (template && fields.length > 0) {
+                  try {
+                    const dynamicCertBuffer = await generateCertificateFromTemplate(template, fields, recipient);
+                    const FileHandler = require('./utils/fileHandler');
+                    const genFileName = `${certId}_${Date.now()}.pdf`;
+                    const genFilePath = FileHandler.getStoragePath('certificates') + '/' + genFileName;
+                    const fs = require('fs');
+                    fs.writeFileSync(genFilePath, dynamicCertBuffer);
+
+                    await GeneratedCertificateModel.create({
+                      generation_id: 'mass_gen_' + campaign.id,
+                      participant_id: participantObj.id,
+                      template_id: template.id,
+                      file_path: genFilePath,
+                      file_name: genFileName
+                    });
+                    console.log(`Generated simulated certificate for ${recipient.email}`);
+                  } catch (genErr) {
+                    console.error('Failed to generate simulated certificate:', genErr);
+                  }
+                }
+
+                // Log simulated send to database
+                await EmailLogModel.create({
+                  campaign_id: campaign.id,
+                  participant_id: participantObj.id,
+                  recipient_email: recipient.email || 'unknown@example.com',
+                  status: 'sent',
+                  provider_response: 'Simulated send in Demo mode',
+                  sent_at: new Date().toISOString()
+                });
               }
             } else {
-              // Real Gmail send via Gmail REST API (more reliable than nodemailer OAuth2 transport)
+              // Real Gmail send via Gmail REST API
               for (const recipient of recipients) {
+                let participantObj = null;
                 try {
                   const personalBody = emailBody
                     .replace(/\{Name\}/gi, recipient.name || '')
@@ -403,11 +641,45 @@ async function handler(req, res) {
                     ? `"${senderDisplayName}" <${senderEmail}>`
                     : senderEmail;
 
-                  // Find matching certificate in ZIP
+                  // Find matching certificate in ZIP or generate dynamically on the fly
                   let attachmentData = null;
                   let attachmentName = null;
-                  if (zipEntries.length > 0) {
-                    const certId = recipient.certificate_id || recipient.certificateId || '';
+                  const certId = recipient.certificate_id || recipient.certificateId || `CERT-${Date.now()}`;
+
+                  if (template && fields.length > 0) {
+                    try {
+                      attachmentData = await generateCertificateFromTemplate(template, fields, recipient);
+                      attachmentName = `${certId}.pdf`;
+                      console.log(`Dynamically generated certificate for ${recipient.email}: ${attachmentName}`);
+
+                      // Register the participant if not exists
+                      participantObj = await ParticipantModel.getByEmail(recipient.email);
+                      if (!participantObj) {
+                        participantObj = await ParticipantModel.create({
+                          name: recipient.name,
+                          email: recipient.email,
+                          certificate_id: certId
+                        });
+                      }
+
+                      // Save the generated certificate file
+                      const FileHandler = require('./utils/fileHandler');
+                      const genFileName = `${certId}_${Date.now()}.pdf`;
+                      const genFilePath = FileHandler.getStoragePath('certificates') + '/' + genFileName;
+                      const fs = require('fs');
+                      fs.writeFileSync(genFilePath, attachmentData);
+
+                      await GeneratedCertificateModel.create({
+                        generation_id: 'mass_gen_' + campaign.id,
+                        participant_id: participantObj.id,
+                        template_id: template.id,
+                        file_path: genFilePath,
+                        file_name: genFileName
+                      });
+                    } catch (genErr) {
+                      console.error(`Failed to generate dynamic certificate for ${recipient.email}:`, genErr);
+                    }
+                  } else if (zipEntries.length > 0) {
                     const matchingEntry = zipEntries.find(entry => {
                       const filename = entry.entryName.split('/').pop();
                       if (!filename) return false;
@@ -419,48 +691,64 @@ async function handler(req, res) {
                       attachmentName = matchingEntry.entryName.split('/').pop() || `${certId}.pdf`;
                       console.log(`Found certificate attachment: ${attachmentName} for ${recipient.email}`);
                     } else {
-                      console.warn(`No matching certificate in ZIP for ID: ${recipient.certificate_id || 'unknown'}`);
+                      console.warn(`No matching certificate in ZIP for ID: ${certId}`);
+                      // Fallback: If there is exactly one file in the ZIP, use it as fallback!
+                      const pdfEntries = zipEntries.filter(entry => !entry.isDirectory && entry.entryName.toLowerCase().endsWith('.pdf'));
+                      const fallbackEntry = pdfEntries.length === 1 ? pdfEntries[0] : (zipEntries.filter(entry => !entry.isDirectory).length === 1 ? zipEntries.filter(entry => !entry.isDirectory)[0] : null);
+                      if (fallbackEntry) {
+                        attachmentData = fallbackEntry.getData();
+                        attachmentName = fallbackEntry.entryName.split('/').pop() || 'certificate.pdf';
+                        console.log(`Fallback used single ZIP entry: ${attachmentName} for ${recipient.email}`);
+                      }
                     }
-                  }
-
-                  // Build RFC 2822 raw email
+                  }                  // Build RFC 2822 raw email
                   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-                  let rawEmail;
+                  const emailParts = [
+                    `From: ${fromStr}`,
+                    `To: ${recipient.email}`,
+                    `Subject: ${emailSubject}`,
+                    'MIME-Version: 1.0',
+                    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+                    '',
+                    `--${boundary}`,
+                    'Content-Type: text/html; charset=UTF-8',
+                    'Content-Transfer-Encoding: 8bit',
+                    '',
+                    htmlBody,
+                    ''
+                  ];
 
-                  if (attachmentData) {
-                    rawEmail = [
-                      `From: ${fromStr}`,
-                      `To: ${recipient.email}`,
-                      `Subject: ${emailSubject}`,
-                      'MIME-Version: 1.0',
-                      `Content-Type: multipart/mixed; boundary="${boundary}"`,
-                      '',
-                      `--${boundary}`,
-                      'Content-Type: text/html; charset=UTF-8',
-                      'Content-Transfer-Encoding: quoted-printable',
-                      '',
-                      htmlBody,
-                      '',
+                  // Add certificate attachment if available
+                  if (attachmentData && attachmentName) {
+                    emailParts.push(
                       `--${boundary}`,
                       `Content-Type: application/pdf; name="${attachmentName}"`,
                       'Content-Transfer-Encoding: base64',
                       `Content-Disposition: attachment; filename="${attachmentName}"`,
                       '',
                       attachmentData.toString('base64'),
-                      '',
-                      `--${boundary}--`
-                    ].join('\r\n');
-                  } else {
-                    rawEmail = [
-                      `From: ${fromStr}`,
-                      `To: ${recipient.email}`,
-                      `Subject: ${emailSubject}`,
-                      'MIME-Version: 1.0',
-                      'Content-Type: text/html; charset=UTF-8',
-                      '',
-                      htmlBody
-                    ].join('\r\n');
+                      ''
+                    );
                   }
+
+                  // Add custom attachments if uploaded
+                  if (customAttachments && customAttachments.length > 0) {
+                    for (const att of customAttachments) {
+                      const contentType = att.filename.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream';
+                      emailParts.push(
+                        `--${boundary}`,
+                        `Content-Type: ${contentType}; name="${att.filename}"`,
+                        'Content-Transfer-Encoding: base64',
+                        `Content-Disposition: attachment; filename="${att.filename}"`,
+                        '',
+                        att.content.toString('base64'),
+                        ''
+                      );
+                    }
+                  }
+
+                  emailParts.push(`--${boundary}--`);
+                  const rawEmail = emailParts.join('\r\n');
 
                   // Base64url encode (Gmail API requirement)
                   const encodedEmail = Buffer.from(rawEmail)
@@ -476,6 +764,27 @@ async function handler(req, res) {
                     throw new Error(gmailResult.error.message || JSON.stringify(gmailResult.error));
                   }
 
+                  // Get or create Participant
+                  participantObj = await ParticipantModel.getByEmail(recipient.email);
+                  if (!participantObj) {
+                    participantObj = await ParticipantModel.create({
+                      name: recipient.name,
+                      email: recipient.email,
+                      certificate_id: recipient.certificate_id || recipient.certificateId || `CERT-${Date.now()}`
+                    });
+                  }
+
+                  // Create EmailLog as delivered
+                  await EmailLogModel.create({
+                    campaign_id: campaign.id,
+                    participant_id: participantObj.id,
+                    recipient_email: recipient.email,
+                    status: 'delivered',
+                    provider_response: `Gmail Msg ID: ${gmailResult.id}`,
+                    sent_at: new Date().toISOString(),
+                    delivered_at: new Date().toISOString()
+                  });
+
                   sentCount++;
                   results.push({ email: recipient.email, name: recipient.name, status: 'sent', messageId: gmailResult.id });
                   console.log(`✓ Sent email to ${recipient.email} (Gmail message ID: ${gmailResult.id})`);
@@ -483,9 +792,40 @@ async function handler(req, res) {
                   console.error(`✗ Failed to send to ${recipient.email}:`, sendErr.message);
                   failedCount++;
                   results.push({ email: recipient.email, name: recipient.name, status: 'failed', error: sendErr.message });
+
+                  // Get or create Participant for logging failure
+                  try {
+                    if (!participantObj) {
+                      participantObj = await ParticipantModel.getByEmail(recipient.email);
+                    }
+                    if (!participantObj) {
+                      participantObj = await ParticipantModel.create({
+                        name: recipient.name || 'Unknown',
+                        email: recipient.email,
+                        certificate_id: recipient.certificate_id || recipient.certificateId || `CERT-${Date.now()}`
+                      });
+                    }
+                    await EmailLogModel.create({
+                      campaign_id: campaign.id,
+                      participant_id: participantObj.id,
+                      recipient_email: recipient.email,
+                      status: 'failed',
+                      error_message: sendErr.message
+                    });
+                  } catch (logErr) {
+                    console.error('Failed to log email send failure in database:', logErr.message);
+                  }
                 }
               }
             }
+
+            // Update EmailCampaign final status
+            await EmailCampaignModel.update(campaign.id, {
+              status: 'completed',
+              sent_count: sentCount,
+              failed_count: failedCount,
+              sent_at: new Date().toISOString()
+            });
 
             res.json({
               success: true,

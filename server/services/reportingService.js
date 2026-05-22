@@ -29,6 +29,9 @@ class ReportingService {
           deliveryStatus: { [Op.in]: ['sent', 'delivered'] }
         }
       });
+
+      // Get templates statistics
+      const totalTemplates = await Template.count();
       
       // Get delivery statistics
       const emailStats = await EmailDeliveryLog.findAll({
@@ -73,6 +76,7 @@ class ReportingService {
           totalBatches,
           totalEmailCampaigns,
           totalEmailsSent,
+          totalTemplates,
           deliveryRate: parseFloat(deliveryRate),
           bounceRate: parseFloat(bounceRate)
         },

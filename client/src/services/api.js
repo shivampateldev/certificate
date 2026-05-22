@@ -16,7 +16,7 @@ const API_BASE = isVercel
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 30000, // 30 seconds timeout for file uploads
+  timeout: 120000, // 120 seconds timeout for file uploads, OCR, and PDF mapping
 });
 
 // Certificate API
@@ -24,8 +24,8 @@ export const certificateAPI = {
   previewCertificate: (templateId, participantId) => 
     api.post('/certificates/preview', { template_id: templateId, participant_id: participantId }),
   
-  generateCertificates: (templateId, batchId) => 
-    api.post('/certificates/generate', { template_id: templateId, batch_id: batchId }),
+  generateCertificates: (templateId, participants, idPattern = '', generateIds = false) => 
+    api.post('/certificates/generate', { template_id: templateId, participants, id_pattern: idPattern, generate_ids: generateIds }),
   
   getGeneration: (generationId) => api.get(`/certificates/generation/${generationId}`),
   getGenerationsByBatch: (batchId) => api.get(`/certificates/batch/${batchId}`),
@@ -98,6 +98,7 @@ export const templateAPI = {
   // Template fields
   addField: (templateId, fieldData) => api.post(`/templates/${templateId}/fields`, fieldData),
   getFields: (templateId) => api.get(`/templates/${templateId}/fields`),
+  saveMapping: (templateId, fields) => api.post('/templates/mapping', { template_id: templateId, fields }),
   updateField: (templateId, fieldId, fieldData) => api.put(`/templates/${templateId}/fields/${fieldId}`, fieldData),
   deleteField: (templateId, fieldId) => api.delete(`/templates/${templateId}/fields/${fieldId}`),
 

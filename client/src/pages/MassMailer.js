@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth as firebaseAuth } from '../firebase';
-import { massMailAPI } from '../services/api';
+import { massMailAPI, templateAPI } from '../services/api';
 import './MassMailerClean.css';
 import './MassMailerMaterial.css';
 
@@ -15,16 +15,44 @@ const MassMailer = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
   useEffect(() => {
     checkAuthStatus();
+    loadTemplates();
   }, []);
+
+  const loadTemplates = async () => {
+    try {
+      const response = await templateAPI.getActiveTemplates();
+      if (response.data && response.data.success) {
+        setTemplates(response.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load active templates:', err);
+    }
+  };
 
   const checkAuthStatus = () => {
     const token = localStorage.getItem('gmail_access_token');
     const email = localStorage.getItem('gmail_user_email');
+    const authTime = localStorage.getItem('gmail_auth_time');
+    
     if (token && email) {
-      setIsAuthenticated(true);
+      if (token === 'demo_token') {
+        setIsAuthenticated(true);
+      } else if (authTime && (Date.now() - parseInt(authTime)) < 50 * 60 * 1000) {
+        setIsAuthenticated(true);
+      } else {
+        // Clear expired credentials
+        localStorage.removeItem('gmail_access_token');
+        localStorage.removeItem('gmail_user_email');
+        localStorage.removeItem('gmail_display_name');
+        localStorage.removeItem('gmail_auth_time');
+        setIsAuthenticated(false);
+        toast.error('Gmail session expired. Please sign in again to refresh credentials.');
+      }
     } else {
       setIsAuthenticated(false);
     }
@@ -49,6 +77,7 @@ const MassMailer = () => {
       localStorage.setItem('gmail_access_token', token);
       localStorage.setItem('gmail_user_email', user.email);
       localStorage.setItem('gmail_display_name', user.displayName || '');
+      localStorage.setItem('gmail_auth_time', Date.now().toString());
 
       setIsAuthenticated(true);
       toast.success(`Successfully authenticated as ${user.email}`, { id: 'auth-loading' });
@@ -69,8 +98,13 @@ const MassMailer = () => {
   const handleSendEmails = async (e) => {
     e.preventDefault();
 
-    if (!zipFile || !csvFile) {
-      toast.error('Please select both ZIP file and CSV file');
+    if (!selectedTemplateId && !zipFile) {
+      toast.error('Please select a template OR upload a certificate ZIP file');
+      return;
+    }
+
+    if (!csvFile) {
+      toast.error('Please select a recipient CSV/Excel file');
       return;
     }
 
@@ -84,7 +118,12 @@ const MassMailer = () => {
 
     try {
       const formData = new FormData();
-      formData.append('zipfile', zipFile);
+      if (zipFile) {
+        formData.append('zipfile', zipFile);
+      }
+      if (selectedTemplateId) {
+        formData.append('templateId', selectedTemplateId);
+      }
       formData.append('csvfile', csvFile);
       formData.append('subject', subject);
       formData.append('body', bodyTemplate);
@@ -107,6 +146,7 @@ const MassMailer = () => {
         // Reset form
         setZipFile(null);
         setCsvFile(null);
+        setSelectedTemplateId('');
         setSenderDisplayName('');
 
         setResults(response.data.data);
@@ -198,21 +238,52 @@ const MassMailer = () => {
             <form onSubmit={handleSendEmails} className="md-card md-card-content" aria-labelledby="email-form-title">
               <h2 id="email-form-title" className="sr-only">Mass Email Configuration Form</h2>
 
+              {/* Certificate template selector */}
+              <div className="form-group mb-6" style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="template-select" className="form-label font-semibold" style={{ fontWeight: '600' }}>
+                  Certificate Template Selection (Optional - Dynamically draw placeholders)
+                </label>
+                <select
+                  id="template-select"
+                  className="form-control"
+                  value={selectedTemplateId}
+                  onChange={(e) => {
+                    setSelectedTemplateId(e.target.value);
+                    if (e.target.value) {
+                      setZipFile(null); // Clear zip selection if template mode is used
+                    }
+                  }}
+                  aria-describedby="template-select-help"
+                >
+                  <option value="">-- Mode A: Send pre-generated PDFs from ZIP file --</option>
+                  {templates.map(tpl => (
+                    <option key={tpl.id} value={tpl.id}>
+                      Mode B: Generate dynamically using Template: {tpl.template_name} ({tpl.file_type.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+                <div id="template-select-help" className="input-help-text mt-1 text-sm text-secondary" style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#666' }}>
+                  Choose a saved certificate template to automatically generate personalized certificates on the fly. Selecting a template disables and makes the "Certificate ZIP File" upload optional!
+                </div>
+              </div>
+
               <fieldset className="file-uploads grid grid-2">
                 <legend className="sr-only">File Upload Section</legend>
 
                 <div className="form-group">
-                  <label htmlFor="zip-file" className="form-label">
-                    Certificate ZIP File
+                  <label htmlFor="zip-file" className={`form-label ${selectedTemplateId ? 'text-muted' : ''}`} style={{ opacity: selectedTemplateId ? 0.5 : 1 }}>
+                    Certificate ZIP File {selectedTemplateId ? '(Bypassed by Template)' : ''}
                   </label>
                   <input
                     id="zip-file"
                     type="file"
                     accept=".zip"
                     onChange={(e) => setZipFile(e.target.files[0])}
-                    required
+                    required={!selectedTemplateId}
+                    disabled={!!selectedTemplateId}
                     className="form-control"
                     aria-describedby="zip-file-help"
+                    style={{ opacity: selectedTemplateId ? 0.6 : 1 }}
                   />
                   <div id="zip-file-help" className="sr-only">
                     Upload a ZIP file containing all certificate PDFs to be sent via email
@@ -370,24 +441,92 @@ const MassMailer = () => {
         </div>
 
         {results && (
-          <div className="md-card">
-            <div className="md-card-header">
-              <h3 className="md-card-title">Email Results</h3>
-            </div>
-            <div className="md-card-content">
-              <div className="grid grid-3">
-                <div className="card text-center">
-                  <div className="text-3xl font-bold text-primary mb-2">{results.total}</div>
-                  <div className="text-sm text-secondary font-medium">Total</div>
+          <div className="space-y-6">
+            {results.results?.some(r => r.error && r.error.includes('gmail.googleapis.com')) && (
+              <div className="md-card alert-danger-card mb-6" style={{ borderLeft: '4px solid #f44336', backgroundColor: '#ffebee' }}>
+                <div className="md-card-content" style={{ padding: '20px' }}>
+                  <h3 className="text-danger font-bold text-lg mb-2" style={{ color: '#d32f2f', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    ⚠️ Action Required: Enable Gmail API in Google Cloud Console
+                  </h3>
+                  <p className="mb-4 text-secondary" style={{ margin: '10px 0', color: '#555' }}>
+                    Your Firebase project does not have the **Gmail API** enabled yet. You must enable it in your Google Cloud Console before emails can be sent on behalf of your Google account.
+                  </p>
+                  {(() => {
+                    const errObj = results.results.find(r => r.error && r.error.includes('gmail.googleapis.com'));
+                    const urlMatch = errObj.error.match(/https:\/\/console\S+/);
+                    const url = urlMatch ? urlMatch[0] : 'https://console.developers.google.com/apis/api/gmail.googleapis.com/overview';
+                    return (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary btn-md"
+                        style={{
+                          textDecoration: 'none',
+                          display: 'inline-block',
+                          backgroundColor: '#d32f2f',
+                          borderColor: '#d32f2f',
+                          color: '#fff',
+                          padding: '10px 16px',
+                          borderRadius: '4px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        Enable Gmail API Now
+                      </a>
+                    );
+                  })()}
                 </div>
-                <div className="card text-center">
-                  <div className="text-3xl font-bold text-success mb-2">{results.sent}</div>
-                  <div className="text-sm text-secondary font-medium">Sent</div>
+              </div>
+            )}
+
+            <div className="md-card">
+              <div className="md-card-header">
+                <h3 className="md-card-title">Email Results</h3>
+              </div>
+              <div className="md-card-content">
+                <div className="grid grid-3">
+                  <div className="card text-center">
+                    <div className="text-3xl font-bold text-primary mb-2">{results.total}</div>
+                    <div className="text-sm text-secondary font-medium">Total</div>
+                  </div>
+                  <div className="card text-center">
+                    <div className="text-3xl font-bold text-success mb-2">{results.sent}</div>
+                    <div className="text-sm text-secondary font-medium">Sent</div>
+                  </div>
+                  <div className="card text-center">
+                    <div className="text-3xl font-bold text-danger mb-2">{results.failed}</div>
+                    <div className="text-sm text-secondary font-medium">Failed</div>
+                  </div>
                 </div>
-                <div className="card text-center">
-                  <div className="text-3xl font-bold text-danger mb-2">{results.failed}</div>
-                  <div className="text-sm text-secondary font-medium">Failed</div>
-                </div>
+
+                {results.failed > 0 && (
+                  <div className="mt-8" style={{ marginTop: '30px' }}>
+                    <h4 className="font-semibold text-danger mb-4" style={{ color: '#d32f2f', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+                      Failed Recipients & Diagnostic Details
+                    </h4>
+                    <div className="results-table-wrapper" style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '4px' }}>
+                      <table className="results-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                        <thead>
+                          <tr style={{ textAlign: 'left', backgroundColor: '#f9f9f9', borderBottom: '2px solid #eee' }}>
+                            <th style={{ padding: '12px 16px', fontWeight: '600' }}>Name</th>
+                            <th style={{ padding: '12px 16px', fontWeight: '600' }}>Email Address</th>
+                            <th style={{ padding: '12px 16px', fontWeight: '600' }}>Error Details</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {results.results.filter(r => r.status === 'failed').map((r, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                              <td style={{ padding: '12px 16px' }}>{r.name || 'Unknown'}</td>
+                              <td style={{ padding: '12px 16px', color: '#555' }}>{r.email}</td>
+                              <td style={{ padding: '12px 16px', color: '#d32f2f', wordBreak: 'break-word' }}>{r.error || 'Unknown error'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

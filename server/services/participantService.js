@@ -6,6 +6,34 @@ const { Participant, Batch } = require('../models');
 const idGenerationService = require('./idGenerationService');
 
 /**
+ * Generate a customized Certificate ID based on a pattern template
+ */
+function generateCustomCertificateId(pattern, name) {
+  if (!pattern) return null;
+  let customId = pattern;
+  
+  // Replace random_number(xxxx...) case-insensitively
+  customId = customId.replace(/\{\{random_number\((x+)\)\}\}/gi, (match, grp) => {
+    const length = grp.length;
+    let numStr = '';
+    for (let i = 0; i < length; i++) {
+      numStr += Math.floor(Math.random() * 10);
+    }
+    return numStr;
+  });
+  
+  // Replace name(start, length) case-insensitively (e.g. {{name(0,3)}})
+  customId = customId.replace(/\{\{name\((\d+)\s*,\s*(\d+)\)\}\}/gi, (match, start, end) => {
+    const s = parseInt(start);
+    const e = parseInt(end);
+    const cleanedName = name.replace(/[^a-zA-Z]/g, '');
+    return cleanedName.substring(s, e).toUpperCase();
+  });
+  
+  return customId;
+}
+
+/**
  * Validate participant data structure
  */
 function validateParticipantData(data) {
@@ -148,7 +176,7 @@ function parseExcelFile(filePath) {
 /**
  * Process uploaded file and validate participant data
  */
-async function processParticipantFile(filePath, fileType) {
+async function processParticipantFile(filePath, fileType, certificateIdPattern = null) {
   try {
     let rawData;
 
@@ -179,7 +207,11 @@ async function processParticipantFile(filePath, fileType) {
       validatedData.map(async (participant, index) => {
         if (!participant.certificateId) {
           try {
-            participant.certificateId = await idGenerationService.generateUniqueID();
+            if (certificateIdPattern) {
+              participant.certificateId = generateCustomCertificateId(certificateIdPattern, participant.name);
+            } else {
+              participant.certificateId = await idGenerationService.generateUniqueID();
+            }
           } catch (idError) {
             console.error('Failed to generate certificate ID:', idError);
             // Use fallback ID generation if service fails
@@ -236,7 +268,14 @@ async function saveParticipantsToBatch(participants, batchData) {
     const savedParticipants = await Promise.all(
       participants.map(async (participant) => {
         // Generate unique certificate ID if not provided
-        const certificateId = participant.certificateId || await idGenerationService.generateUniqueID();
+        let certificateId = participant.certificateId;
+        if (!certificateId) {
+          if (batchData.certificateIdPattern) {
+            certificateId = generateCustomCertificateId(batchData.certificateIdPattern, participant.name);
+          } else {
+            certificateId = await idGenerationService.generateUniqueID();
+          }
+        }
         
         return Participant.create({
           ...participant,
@@ -320,16 +359,20 @@ async function updateParticipant(participantId, updateData) {
 /**
  * Export participants to CSV
  */
-function exportParticipantsToCSV(participants) {
-  const headers = ['Sr_no', 'Name', 'Email', 'Certificate_ID'];
+function exportParticipantsToCSV(participants, host = '') {
+  const headers = ['Sr_no', 'Name', 'Email', 'Certificate_ID', 'Certificate_Link'];
   const csvData = [headers];
 
   participants.forEach(participant => {
+    const link = host && participant.certificateId 
+      ? `${host}/api/certificates/download/${participant.certificateId}` 
+      : '';
     csvData.push([
       participant.srNo || '',
       participant.name || '',
       participant.email || '',
-      participant.certificateId || ''
+      participant.certificateId || '',
+      link
     ]);
   });
 
@@ -339,13 +382,19 @@ function exportParticipantsToCSV(participants) {
 /**
  * Export participants to Excel
  */
-function exportParticipantsToExcel(participants) {
-  const worksheetData = participants.map(participant => ({
-    Sr_no: participant.srNo || '',
-    Name: participant.name || '',
-    Email: participant.email || '',
-    Certificate_ID: participant.certificateId || ''
-  }));
+function exportParticipantsToExcel(participants, host = '') {
+  const worksheetData = participants.map(participant => {
+    const link = host && participant.certificateId 
+      ? `${host}/api/certificates/download/${participant.certificateId}` 
+      : '';
+    return {
+      Sr_no: participant.srNo || '',
+      Name: participant.name || '',
+      Email: participant.email || '',
+      Certificate_ID: participant.certificateId || '',
+      Certificate_Link: link
+    };
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(worksheetData);
   const workbook = XLSX.utils.book_new();

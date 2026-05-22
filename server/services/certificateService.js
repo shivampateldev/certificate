@@ -26,6 +26,15 @@ function calculateOptimalFontSizeWithFont(text, maxWidth, baseFontSize, font, mi
 // Helper function to get the appropriate PDF font based on family and style
 async function getEmbeddedFont(pdfDoc, fontFamily, bold, italic) {
     try {
+        // First, check the custom uploaded fonts directory
+        const { getCustomFonts } = require('../utils/fontLoader');
+        const customFonts = getCustomFonts();
+        const matchedFont = customFonts.find(f => f.name.toLowerCase() === (fontFamily || '').toLowerCase());
+        if (matchedFont) {
+            const fontBytes = fs.readFileSync(matchedFont.path);
+            return await pdfDoc.embedFont(fontBytes);
+        }
+
         // Map font families to PDF-lib supported fonts
         const fontMap = {
             'Arial': 'Helvetica',

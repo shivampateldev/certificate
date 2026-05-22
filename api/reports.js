@@ -38,15 +38,55 @@ async function handler(req, res) {
         const totalCertificates = generations.reduce((sum, g) => sum + (g.certificate_count || 0), 0);
         
         // Calculate email stats
-        const totalEmailsSent = logs.filter(l => l.status === 'sent' || l.status === 'delivered').length;
-        const totalEmailsDelivered = logs.filter(l => l.status === 'delivered').length;
-        const deliveryRate = totalEmailsSent > 0 ? Math.round((totalEmailsDelivered / totalEmailsSent) * 100) : 0;
+        const emailDeliveryStats = {
+          delivered: logs.filter(l => l.status === 'delivered').length,
+          sent: logs.filter(l => l.status === 'sent').length,
+          failed: logs.filter(l => l.status === 'failed').length,
+          bounced: logs.filter(l => l.status === 'bounced').length
+        };
+
+        const totalAttempted = emailDeliveryStats.delivered + emailDeliveryStats.sent + emailDeliveryStats.failed + emailDeliveryStats.bounced;
+        const totalEmailsSent = emailDeliveryStats.delivered + emailDeliveryStats.sent;
+        const deliveryRate = totalAttempted > 0 ? Math.round((totalEmailsSent / totalAttempted) * 100) : 0;
 
         // Recent activity (last 7 days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const recentGenerations = generations.filter(g => new Date(g.generated_at) >= sevenDaysAgo);
+        const recentGenerations = generations.filter(g => new Date(g.generated_at || g.created_at || Date.now()) >= sevenDaysAgo);
         const recentCertificates = recentGenerations.reduce((sum, g) => sum + (g.certificate_count || 0), 0);
+
+        // Generate dynamic trendData for last 6 months
+        const trendData = {
+          labels: [],
+          certificates: [],
+          emails: []
+        };
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          const label = d.toLocaleString('default', { month: 'short' });
+          const month = d.getMonth();
+          const year = d.getFullYear();
+
+          // Count certificates generated in this month/year
+          const certCount = generations
+            .filter(g => {
+              const gDate = new Date(g.generated_at || g.created_at || Date.now());
+              return gDate.getMonth() === month && gDate.getFullYear() === year;
+            })
+            .reduce((sum, g) => sum + (g.certificate_count || 0), 0);
+
+          // Count emails sent in this month/year
+          const emailCount = logs
+            .filter(l => {
+              const lDate = new Date(l.sent_at || l.created_at || Date.now());
+              return lDate.getMonth() === month && lDate.getFullYear() === year && (l.status === 'sent' || l.status === 'delivered');
+            }).length;
+
+          trendData.labels.push(label);
+          trendData.certificates.push(certCount);
+          trendData.emails.push(emailCount);
+        }
 
         // Calculate statistics
         const stats = {
@@ -59,8 +99,8 @@ async function handler(req, res) {
           },
           recentActivity: {
             recentCertificates,
-            recentBatches: batches.filter(b => new Date(b.created_at) >= sevenDaysAgo).length,
-            recentCampaigns: campaigns.filter(c => new Date(c.created_at) >= sevenDaysAgo).length
+            recentBatches: batches.filter(b => new Date(b.created_at || Date.now()) >= sevenDaysAgo).length,
+            recentCampaigns: campaigns.filter(c => new Date(c.created_at || Date.now()) >= sevenDaysAgo).length
           },
           participants: {
             total: participants.length,
@@ -83,7 +123,9 @@ async function handler(req, res) {
             total: campaigns.length,
             sent: campaigns.filter(c => c.status === 'completed').length,
             pending: campaigns.filter(c => c.status === 'draft' || c.status === 'sending').length
-          }
+          },
+          trendData,
+          emailDeliveryStats
         };
 
         // Count participants by batch
@@ -197,10 +239,11 @@ async function handler(req, res) {
           failed: generations.filter(g => g.status === 'failed').length,
           pending: generations.filter(g => g.status === 'pending').length,
           byBatch: {},
+          categoryBreakdown: {},
           timeline: {}
         };
 
-        // Group by batch
+        // Group by batch and build categoryBreakdown
         for (const batch of batches) {
           const batchGenerations = generations.filter(g => g.batch_id === batch.id);
           const totalCerts = batchGenerations.reduce((sum, g) => sum + (g.certificate_count || 0), 0);
@@ -208,8 +251,12 @@ async function handler(req, res) {
             batch_name: batch.batch_name,
             generation_count: batchGenerations.length,
             total_certificates: totalCerts,
-            completed: batchGenerations.filter(g => g.status === 'completed').length
+            completed: batchGenerations.filter(g => g.status === 'completed').length,
+            created_at: batch.created_at || new Date().toISOString()
           };
+
+          // Use batch_name as the category for categoryBreakdown
+          report.categoryBreakdown[batch.batch_name] = (report.categoryBreakdown[batch.batch_name] || 0) + totalCerts;
         }
 
         // Timeline
@@ -218,6 +265,26 @@ async function handler(req, res) {
           const date = typeof dateStr === 'string' ? dateStr.split('T')[0] : new Date(dateStr).toISOString().split('T')[0];
           report.timeline[date] = (report.timeline[date] || 0) + (g.certificate_count || 0);
         }
+
+        // Pagination
+        const urlParams = new URLSearchParams(req.url.split('?')[1] || '');
+        const page = parseInt(urlParams.get('page') || '1');
+        const limit = parseInt(urlParams.get('limit') || '20');
+        const total = Object.keys(report.byBatch).length;
+        const totalPages = Math.ceil(total / limit);
+
+        const byBatchEntries = Object.entries(report.byBatch);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedByBatch = Object.fromEntries(byBatchEntries.slice(startIndex, endIndex));
+
+        report.byBatch = paginatedByBatch;
+        report.pagination = {
+          page,
+          limit,
+          total,
+          totalPages
+        };
 
         return res.json({
           success: true,
@@ -236,6 +303,7 @@ async function handler(req, res) {
       try {
         const campaigns = await EmailCampaignModel.getAll?.() || [];
         const logs = await EmailLogModel.getAll?.() || [];
+        const batches = await BatchModel.getAll().catch(() => []);
 
         const report = {
           total_campaigns: campaigns.length,
@@ -248,12 +316,21 @@ async function handler(req, res) {
             bounced: logs.filter(l => l.status === 'bounced').length
           },
           by_campaign: {},
+          campaigns: [],
           timeline: {}
         };
 
         // Group by campaign
         for (const campaign of campaigns) {
           const campaignLogs = logs.filter(l => l.campaign_id === campaign.id);
+          
+          // Map batch name if available
+          let batchName = '-';
+          if (campaign.batch_id) {
+            const batch = batches.find(b => b.id === campaign.batch_id);
+            if (batch) batchName = batch.batch_name;
+          }
+
           report.by_campaign[campaign.id] = {
             subject: campaign.subject,
             status: campaign.status,
@@ -262,9 +339,38 @@ async function handler(req, res) {
             failed_count: campaign.failed_count,
             created_at: campaign.created_at,
             sent_at: campaign.sent_at,
+            batch_name: batchName,
             logs: campaignLogs
           };
         }
+
+        // Flat array of campaigns sorted by creation date for graphs
+        report.campaigns = campaigns.map(campaign => {
+          const totalRecipients = campaign.recipient_count || 0;
+          const sent = campaign.sent_count || 0;
+          const failed = campaign.failed_count || 0;
+          const delivered = Math.max(0, sent - failed);
+          const deliveryRate = totalRecipients > 0 ? Math.round((delivered / totalRecipients) * 100) : 0;
+          
+          let batchName = '-';
+          if (campaign.batch_id) {
+            const batch = batches.find(b => b.id === campaign.batch_id);
+            if (batch) batchName = batch.batch_name;
+          }
+
+          return {
+            id: campaign.id,
+            subject: campaign.subject || '(No subject)',
+            batchName,
+            totalRecipients,
+            emailsSent: sent,
+            emailsDelivered: delivered,
+            emailsFailed: failed,
+            deliveryRate,
+            status: campaign.status || 'unknown',
+            createdAt: campaign.created_at || new Date().toISOString()
+          };
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         // Timeline
         for (const log of logs) {
@@ -272,6 +378,26 @@ async function handler(req, res) {
           const date = typeof dateStr === 'string' ? dateStr.split('T')[0] : new Date(dateStr).toISOString().split('T')[0];
           report.timeline[date] = (report.timeline[date] || 0) + 1;
         }
+
+        // Pagination for by_campaign
+        const urlParams = new URLSearchParams(req.url.split('?')[1] || '');
+        const page = parseInt(urlParams.get('page') || '1');
+        const limit = parseInt(urlParams.get('limit') || '20');
+        const total = Object.keys(report.by_campaign).length;
+        const totalPages = Math.ceil(total / limit);
+
+        const byCampaignEntries = Object.entries(report.by_campaign);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedByCampaign = Object.fromEntries(byCampaignEntries.slice(startIndex, endIndex));
+
+        report.by_campaign = paginatedByCampaign;
+        report.pagination = {
+          page,
+          limit,
+          total,
+          totalPages
+        };
 
         return res.json({
           success: true,

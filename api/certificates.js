@@ -15,6 +15,32 @@ const FileHandler = require('./utils/fileHandler');
 
 module.exports.config = { api: { bodyParser: false } };
 
+// Helper to get request body (compat with Express and Serverless)
+async function getRequestBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    return req.body;
+  }
+  if (req.body && typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      return req.body;
+    }
+  }
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', err => reject(err));
+  });
+}
+
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -27,195 +53,305 @@ async function handler(req, res) {
   try {
     // POST /api/certificates/preview - Preview certificate for participant
     if (urlPath === '/api/certificates/preview' && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const { template_id, participant_id } = JSON.parse(body);
+      try {
+        const body = await getRequestBody(req);
+        const { template_id, participant_id } = body;
 
-          if (!template_id || !participant_id) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'template_id and participant_id are required' }
-            });
-          }
-
-          // Get template and fields
-          const template = await TemplateModel.getById(template_id);
-          if (!template) {
-            return res.status(404).json({
-              success: false,
-              error: { message: 'Template not found' }
-            });
-          }
-
-          const fields = await TemplateFieldModel.getByTemplateId(template_id);
-
-          // Get participant
-          const participant = await ParticipantModel.getById(participant_id);
-          if (!participant) {
-            return res.status(404).json({
-              success: false,
-              error: { message: 'Participant not found' }
-            });
-          }
-
-          // Prepare field data for rendering
-          const fieldData = {};
-          for (const field of fields) {
-            const fieldName = field.field_name.toLowerCase();
-            
-            if (fieldName === 'name') {
-              fieldData[field.id] = participant.name;
-            } else if (fieldName === 'email') {
-              fieldData[field.id] = participant.email;
-            } else if (fieldName === 'certificate_id') {
-              fieldData[field.id] = participant.certificate_id;
-            } else if (participant.custom_fields && participant.custom_fields[fieldName]) {
-              fieldData[field.id] = participant.custom_fields[fieldName];
-            } else {
-              fieldData[field.id] = '';
-            }
-          }
-
-          return res.json({
-            success: true,
-            data: {
-              template,
-              fields,
-              participant,
-              fieldData
-            }
-          });
-        } catch (error) {
-          return res.status(500).json({
+        if (!template_id || !participant_id) {
+          return res.status(400).json({
             success: false,
-            error: { message: error.message }
+            error: { message: 'template_id and participant_id are required' }
           });
         }
-      });
-      return;
+
+        // Get template and fields
+        const template = await TemplateModel.getById(template_id);
+        if (!template) {
+          return res.status(404).json({
+            success: false,
+            error: { message: 'Template not found' }
+          });
+        }
+
+        const fields = await TemplateFieldModel.getByTemplateId(template_id);
+
+        // Get participant
+        const participant = await ParticipantModel.getById(participant_id);
+        if (!participant) {
+          return res.status(404).json({
+            success: false,
+            error: { message: 'Participant not found' }
+          });
+        }
+
+        // Prepare field data for rendering
+        const fieldData = {};
+        for (const field of fields) {
+          const fieldName = field.field_name.toLowerCase();
+          
+          if (fieldName === 'name') {
+            fieldData[field.id] = participant.name;
+          } else if (fieldName === 'email') {
+            fieldData[field.id] = participant.email;
+          } else if (fieldName === 'certificate_id') {
+            fieldData[field.id] = participant.certificate_id;
+          } else if (participant.custom_fields && participant.custom_fields[fieldName]) {
+            fieldData[field.id] = participant.custom_fields[fieldName];
+          } else {
+            fieldData[field.id] = '';
+          }
+        }
+
+        return res.json({
+          success: true,
+          data: {
+            template,
+            fields,
+            participant,
+            fieldData
+          }
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
-    // POST /api/certificates/generate - Generate certificates for batch
+    // POST /api/certificates/generate - Generate certificates in background
     if (urlPath === '/api/certificates/generate' && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const { template_id, batch_id } = JSON.parse(body);
+      try {
+        const body = await getRequestBody(req);
+        const { template_id, participants, id_pattern, generate_ids } = body;
 
-          if (!template_id || !batch_id) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'template_id and batch_id are required' }
-            });
-          }
-
-          // Verify template exists
-          const template = await TemplateModel.getById(template_id);
-          if (!template) {
-            return res.status(404).json({
-              success: false,
-              error: { message: 'Template not found' }
-            });
-          }
-
-          // Get participants in batch
-          const participants = await ParticipantModel.getByBatchId(batch_id);
-          if (participants.length === 0) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'No participants in batch' }
-            });
-          }
-
-          // Create generation record
-          const generation = await CertificateGenerationModel.create({
-            template_id,
-            batch_id,
-            certificate_count: participants.length
+        if (!template_id || !participants || !Array.isArray(participants)) {
+          return res.status(400).json({
+            success: false,
+            error: { message: 'template_id and participants array are required' }
           });
+        }
 
-          // Get template fields
-          const fields = await TemplateFieldModel.getByTemplateId(template_id);
+        // Verify template exists
+        const template = await TemplateModel.getById(template_id);
+        if (!template) {
+          return res.status(404).json({
+            success: false,
+            error: { message: 'Template not found' }
+          });
+        }
 
-          // Generate certificates (in real implementation, this would be async)
+        const fields = await TemplateFieldModel.getByTemplateId(template_id);
+
+        // Create background generation record
+        const generation = await CertificateGenerationModel.create({
+          template_id,
+          batch_id: 'batch_' + Date.now(),
+          certificate_count: participants.length,
+          completed_count: 0,
+          status: 'processing'
+        });
+
+        // Respond immediately to prevent UI blocking
+        res.json({
+          success: true,
+          data: {
+            jobId: generation.id,
+            total: participants.length,
+            status: 'processing'
+          }
+        });
+
+        // Spawn async worker loop
+        const { generateCustomCertificateId } = require('../server/services/idGenerationService');
+        const FileHandler = require('./utils/fileHandler');
+        const fs = require('fs');
+        const path = require('path');
+        const { PDFDocument, rgb } = require('pdf-lib');
+
+        const processBatchAsync = async () => {
           const results = [];
-          for (const participant of participants) {
+          const outputDir = FileHandler.getStoragePath('certificates') || 'uploads/certificates';
+          if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+          }
+
+          for (let i = 0; i < participants.length; i++) {
+            const row = participants[i];
+            const name = row.Name || row.name || '';
+            const email = row.Email || row.email || '';
+            
+            let certId = row.Certificate_ID || row.certificate_id || row['Certificate ID'];
+            if (generate_ids || !certId) {
+              certId = generateCustomCertificateId(id_pattern, name, row) || `CERT-${Date.now()}-${i}`;
+            }
+
             try {
-              // Prepare field data
-              const fieldData = {};
+              const fileName = `${certId}.pdf`;
+              const filePath = path.join(outputDir, fileName);
+
+              // Read template file
+              const existingPdfBytes = fs.readFileSync(template.file_path);
+              const pdfDoc = await PDFDocument.load(existingPdfBytes);
+              const pages = pdfDoc.getPages();
+              const firstPage = pages[0];
+
+              // Dynamic background fields drawing
               for (const field of fields) {
-                const fieldName = field.field_name.toLowerCase();
-                
-                if (fieldName === 'name') {
-                  fieldData[field.id] = participant.name;
-                } else if (fieldName === 'email') {
-                  fieldData[field.id] = participant.email;
-                } else if (fieldName === 'certificate_id') {
-                  fieldData[field.id] = participant.certificate_id;
-                } else if (participant.custom_fields && participant.custom_fields[fieldName]) {
-                  fieldData[field.id] = participant.custom_fields[fieldName];
-                } else {
-                  fieldData[field.id] = '';
+                const fieldName = (field.field_name || '').toLowerCase();
+                let text = '';
+                if (fieldName === 'name') text = name;
+                else if (fieldName === 'email') text = email;
+                else if (fieldName === 'certificate_id') text = certId;
+                else if (row[field.field_name]) text = String(row[field.field_name]);
+                else if (row[fieldName]) text = String(row[fieldName]);
+
+                if (text) {
+                  // Embed appropriate font
+                  let pdfFont;
+                  try {
+                    const { getCustomFonts } = require('../server/utils/fontLoader');
+                    const customFonts = getCustomFonts();
+                    const matchedFont = customFonts.find(f => f.name.toLowerCase() === (field.font_family || '').toLowerCase());
+                    if (matchedFont) {
+                      pdfFont = await pdfDoc.embedFont(fs.readFileSync(matchedFont.path));
+                    } else {
+                      pdfFont = await pdfDoc.embedFont('Helvetica');
+                    }
+                  } catch (fontErr) {
+                    pdfFont = await pdfDoc.embedFont('Helvetica');
+                  }
+
+                  // Convert colors hex -> rgb
+                  let r = 0, g = 0, b = 0;
+                  if (field.color && field.color.startsWith('#')) {
+                    const hex = field.color.substring(1);
+                    r = parseInt(hex.substring(0, 2), 16) || 0;
+                    g = parseInt(hex.substring(2, 4), 16) || 0;
+                    b = parseInt(hex.substring(4, 6), 16) || 0;
+                  }
+
+                  firstPage.drawText(text, {
+                    x: field.x,
+                    y: field.y,
+                    size: field.font_size || 24,
+                    font: pdfFont,
+                    color: rgb(r / 255, g / 255, b / 255)
+                  });
                 }
               }
 
-              // Create certificate record
-              const fileName = `${participant.certificate_id}_${Date.now()}.pdf`;
-              const filePath = FileHandler.getStoragePath('certificates') + '/' + fileName;
+              const pdfBytes = await pdfDoc.save();
+              fs.writeFileSync(filePath, pdfBytes);
 
-              const cert = await GeneratedCertificateModel.create({
+              // Save generated certificate record
+              await GeneratedCertificateModel.create({
                 generation_id: generation.id,
-                participant_id: participant.id,
-                template_id,
+                participant_id: 'part_' + i,
+                template_id: template.id,
                 file_path: filePath,
-                file_name: fileName
+                file_name: fileName,
+                status: 'generated',
+                recipient_name: name,
+                recipient_email: email,
+                certificate_id: certId
               });
 
-              results.push({
-                participant_id: participant.id,
-                certificate_id: cert.id,
-                status: 'generated',
-                file_name: fileName
-              });
-            } catch (error) {
-              results.push({
-                participant_id: participant.id,
-                status: 'failed',
-                error: error.message
-              });
+              results.push({ name, email, certificateId: certId, status: 'success' });
+            } catch (err) {
+              console.error(`Failed to generate for row ${i}:`, err.message);
+              results.push({ name, email, certificateId: certId, status: 'failed', error: err.message });
+            }
+
+            // Update progress
+            await CertificateGenerationModel.update(generation.id, {
+              certificate_count: participants.length,
+              completed_count: i + 1,
+              status: (i + 1) === participants.length ? 'completed' : 'processing',
+              completed_at: (i + 1) === participants.length ? new Date().toISOString() : null
+            });
+
+            // Yield execution in chunks of 5
+            if (i % 5 === 0) {
+              await new Promise(r => setTimeout(r, 10));
             }
           }
+        };
 
-          // Update generation status
-          const successCount = results.filter(r => r.status === 'generated').length;
-          await CertificateGenerationModel.update(generation.id, {
-            status: successCount === participants.length ? 'completed' : 'completed',
-            completed_at: new Date().toISOString()
-          });
+        // Trigger worker loop
+        processBatchAsync().catch(err => {
+          console.error('Async queue processing failed:', err.message);
+          CertificateGenerationModel.update(generation.id, { status: 'failed', error_message: err.message });
+        });
 
-          return res.json({
-            success: true,
-            data: {
-              generation,
-              results,
-              summary: {
-                total: participants.length,
-                generated: successCount,
-                failed: results.length - successCount
-              }
-            }
-          });
-        } catch (error) {
-          return res.status(500).json({
-            success: false,
-            error: { message: error.message }
-          });
+      } catch (error) {
+        res.status(500).json({ success: false, error: { message: error.message } });
+      }
+    }
+
+    // GET /api/certificates/download/zip/:jobId - Download ZIP
+    const zipMatch = urlPath.match(/^\/api\/certificates\/download\/zip\/([^/]+)$/);
+    if (zipMatch && method === 'GET') {
+      try {
+        const jobId = zipMatch[1];
+        const certificates = await GeneratedCertificateModel.getByGenerationId(jobId);
+
+        if (certificates.length === 0) {
+          return res.status(404).json({ success: false, error: { message: 'No certificates found for this job' } });
         }
-      });
-      return;
+
+        const JSZip = require('jszip');
+        const zip = new JSZip();
+        const fs = require('fs');
+
+        for (const cert of certificates) {
+          if (fs.existsSync(cert.file_path)) {
+            const fileData = fs.readFileSync(cert.file_path);
+            zip.file(`${cert.certificate_id}.pdf`, fileData);
+          }
+        }
+
+        const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename=certificates_${jobId}.zip`);
+        return res.end(zipBuffer);
+      } catch (error) {
+        return res.status(500).json({ success: false, error: { message: error.message } });
+      }
+    }
+
+    // GET /api/certificates/export/:jobId - Export enriched dataset
+    const exportMatch = urlPath.match(/^\/api\/certificates\/export\/([^/]+)$/);
+    if (exportMatch && method === 'GET') {
+      try {
+        const jobId = exportMatch[1];
+        const certificates = await GeneratedCertificateModel.getByGenerationId(jobId);
+
+        if (certificates.length === 0) {
+          return res.status(404).json({ success: false, error: { message: 'No certificates found for this job' } });
+        }
+
+        const serverUrl = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+        const headers = ['Sr_no', 'Name', 'Email', 'Certificate_ID', 'Certificate_Link'];
+        const rows = [headers.join(',')];
+
+        certificates.forEach((c, idx) => {
+          const downloadUrl = `${serverUrl}/api/certificates/download/${c.certificate_id}`;
+          rows.push([
+            idx + 1,
+            `"${(c.recipient_name || '').replace(/"/g, '""')}"`,
+            `"${(c.recipient_email || '').replace(/"/g, '""')}"`,
+            `"${(c.certificate_id || '').replace(/"/g, '""')}"`,
+            `"${downloadUrl}"`
+          ].join(','));
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=enriched_dataset_${jobId}.csv`);
+        return res.end(rows.join('\n'));
+      } catch (error) {
+        return res.status(500).json({ success: false, error: { message: error.message } });
+      }
     }
 
     // GET /api/certificates/generation/:generationId - Get generation details
@@ -296,22 +432,34 @@ async function handler(req, res) {
     const downloadMatch = urlPath.match(/^\/api\/certificates\/download\/([^/]+)$/);
     if (downloadMatch && method === 'GET') {
       try {
-        const cert = await GeneratedCertificateModel.getByGenerationId(downloadMatch[1]);
-        if (!cert || cert.length === 0) {
+        const certId = downloadMatch[1];
+        let cert = await GeneratedCertificateModel.getByCertificateId(certId);
+        
+        // Fallback to get by ID if needed
+        if (!cert) {
+          const list = await GeneratedCertificateModel.getByGenerationId(certId);
+          if (list && list.length > 0) cert = list[0];
+        }
+
+        if (!cert) {
           return res.status(404).json({
             success: false,
-            error: { message: 'Certificate not found' }
+            error: { message: 'Certificate record not found' }
           });
         }
 
-        // In real implementation, would serve the actual file
-        return res.json({
-          success: true,
-          data: {
-            message: 'Certificate download would be served here',
-            certificate: cert[0]
-          }
-        });
+        const fs = require('fs');
+        if (!fs.existsSync(cert.file_path)) {
+          return res.status(404).json({
+            success: false,
+            error: { message: `Physical certificate file not found on disk: ${cert.file_path}` }
+          });
+        }
+
+        const fileStream = fs.createReadStream(cert.file_path);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${cert.file_name || certId + '.pdf'}"`);
+        return fileStream.pipe(res);
       } catch (error) {
         return res.status(500).json({
           success: false,

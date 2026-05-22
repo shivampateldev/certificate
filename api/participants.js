@@ -11,6 +11,32 @@ const FileHandler = require('./utils/fileHandler');
 
 module.exports.config = { api: { bodyParser: false } };
 
+// Helper to get request body (compat with Express and Serverless)
+async function getRequestBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    return req.body;
+  }
+  if (req.body && typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      return req.body;
+    }
+  }
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', err => reject(err));
+  });
+}
+
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -46,42 +72,38 @@ async function handler(req, res) {
 
     // POST /api/participants - Create single participant
     if (urlPath === '/api/participants' && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const validation = Validators.validateParticipant(data);
-          
-          if (!validation.isValid) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'Validation failed', details: validation.errors }
-            });
-          }
-
-          // Check for duplicate email
-          const existing = await ParticipantModel.getByEmail(data.email);
-          if (existing) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'Email already exists' }
-            });
-          }
-
-          const participant = await ParticipantModel.create(data);
-          return res.status(201).json({
-            success: true,
-            data: participant
-          });
-        } catch (error) {
-          return res.status(500).json({
+      try {
+        const body = await getRequestBody(req);
+        const data = body;
+        const validation = Validators.validateParticipant(data);
+        
+        if (!validation.isValid) {
+          return res.status(400).json({
             success: false,
-            error: { message: error.message }
+            error: { message: 'Validation failed', details: validation.errors }
           });
         }
-      });
-      return;
+
+        // Check for duplicate email
+        const existing = await ParticipantModel.getByEmail(data.email);
+        if (existing) {
+          return res.status(400).json({
+            success: false,
+            error: { message: 'Email already exists' }
+          });
+        }
+
+        const participant = await ParticipantModel.create(data);
+        return res.status(201).json({
+          success: true,
+          data: participant
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     // POST /api/participants/upload - Upload CSV/Excel file
@@ -184,58 +206,54 @@ async function handler(req, res) {
 
     // POST /api/participants/batch - Create batch and import participants
     if (urlPath === '/api/participants/batch' && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const { batch_name, event_name, event_date, participants } = JSON.parse(body);
+      try {
+        const body = await getRequestBody(req);
+        const { batch_name, event_name, event_date, participants } = body;
 
-          if (!batch_name) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'Batch name is required' }
-            });
-          }
-
-          if (!participants || !Array.isArray(participants) || participants.length === 0) {
-            return res.status(400).json({
-              success: false,
-              error: { message: 'Participants array is required and must not be empty' }
-            });
-          }
-
-          // Create batch
-          const batch = await BatchModel.create({
-            batch_name,
-            event_name,
-            event_date,
-            participant_count: participants.length
-          });
-
-          // Create participants
-          const created = await ParticipantModel.bulkCreate(participants, batch.id);
-
-          // Update batch with final count
-          await BatchModel.update(batch.id, {
-            participant_count: created.length
-          });
-
-          return res.status(201).json({
-            success: true,
-            data: {
-              batch,
-              participants: created,
-              count: created.length
-            }
-          });
-        } catch (error) {
-          return res.status(500).json({
+        if (!batch_name) {
+          return res.status(400).json({
             success: false,
-            error: { message: error.message }
+            error: { message: 'Batch name is required' }
           });
         }
-      });
-      return;
+
+        if (!participants || !Array.isArray(participants) || participants.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: { message: 'Participants array is required and must not be empty' }
+          });
+        }
+
+        // Create batch
+        const batch = await BatchModel.create({
+          batch_name,
+          event_name,
+          event_date,
+          participant_count: participants.length
+        });
+
+        // Create participants
+        const created = await ParticipantModel.bulkCreate(participants, batch.id);
+
+        // Update batch with final count
+        await BatchModel.update(batch.id, {
+          participant_count: created.length
+        });
+
+        return res.status(201).json({
+          success: true,
+          data: {
+            batch,
+            participants: created,
+            count: created.length
+          }
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     // GET /api/participants/batch/:batchId - Get participants in batch
@@ -252,24 +270,20 @@ async function handler(req, res) {
     // PUT /api/participants/:id - Update participant
     const updateMatch = urlPath.match(/^\/api\/participants\/([^/]+)$/);
     if (updateMatch && method === 'PUT') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const participant = await ParticipantModel.update(updateMatch[1], data);
-          return res.json({
-            success: true,
-            data: participant
-          });
-        } catch (error) {
-          return res.status(500).json({
-            success: false,
-            error: { message: error.message }
-          });
-        }
-      });
-      return;
+      try {
+        const body = await getRequestBody(req);
+        const data = body;
+        const participant = await ParticipantModel.update(updateMatch[1], data);
+        return res.json({
+          success: true,
+          data: participant
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     // DELETE /api/participants/:id - Delete participant
@@ -290,32 +304,28 @@ async function handler(req, res) {
 
     // POST /api/participants/export - Export participants as CSV
     if (urlPath === '/api/participants/export' && method === 'POST') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const { batch_id } = JSON.parse(body);
-          let participants;
+      try {
+        const body = await getRequestBody(req);
+        const { batch_id } = body;
+        let participants;
 
-          if (batch_id) {
-            participants = await ParticipantModel.getByBatchId(batch_id);
-          } else {
-            participants = await ParticipantModel.getAll();
-          }
-
-          const csv = CSVParser.generateCSV(participants);
-
-          res.setHeader('Content-Type', 'text/csv');
-          res.setHeader('Content-Disposition', 'attachment; filename="participants.csv"');
-          return res.send(csv);
-        } catch (error) {
-          return res.status(500).json({
-            success: false,
-            error: { message: error.message }
-          });
+        if (batch_id) {
+          participants = await ParticipantModel.getByBatchId(batch_id);
+        } else {
+          participants = await ParticipantModel.getAll();
         }
-      });
-      return;
+
+        const csv = CSVParser.generateCSV(participants);
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="participants.csv"');
+        return res.send(csv);
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: { message: error.message }
+        });
+      }
     }
 
     return res.status(404).json({

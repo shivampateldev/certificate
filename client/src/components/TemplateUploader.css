@@ -132,11 +132,13 @@
   margin: 0 auto;
 }
 
-.image-preview {
+.image-preview,
+.preview-image {
   max-width: 100%;
   max-height: 300px;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
+  object-fit: contain;
 }
 
 .pdf-preview {

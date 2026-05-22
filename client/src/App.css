@@ -137,8 +137,17 @@ body {
 /* ─── APP SHELL ─── */
 .App {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: var(--bg-main);
+}
+
+.app-body-container {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  margin-top: var(--header-height);
+  min-height: calc(100vh - var(--header-height));
 }
 
 /* ─── SIDEBAR ─── */
@@ -149,9 +158,9 @@ body {
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 0;
+  top: var(--header-height);
   left: 0;
-  height: 100vh;
+  height: calc(100vh - var(--header-height));
   z-index: 200;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: var(--shadow-sm);
@@ -273,21 +282,24 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 /* ─── TOP BAR ─── */
 .topbar {
   height: var(--header-height);
-  background: var(--bg-white);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 28px;
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 300;
+  background-color: var(--bg-white);
   box-shadow: var(--shadow-sm);
 }
 
@@ -295,12 +307,59 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 60px;
 }
 
-.topbar-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
+.topbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+}
+
+.header-logo-img {
+  height: 48px;
+  max-width: 90%;
+  object-fit: contain;
+  display: block;
+}
+
+.topbar-right {
+  min-width: 60px;
+}
+
+/* ─── FOOTER BANNER ─── */
+.app-footer {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  background: var(--bg-white);
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 250;
+}
+
+.footer-banner-img {
+  height: 40px;
+  width: auto;
+  max-width: 90%;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .header-logo-img {
+    height: 36px;
+  }
+  .footer-banner-img {
+    height: 30px;
+  }
+  .topbar {
+    padding: 0 16px;
+  }
 }
 
 .topbar-breadcrumb {

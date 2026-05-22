@@ -341,7 +341,7 @@ const AnalyticsCharts = ({ dashboardData, certificateData, emailData, onRefresh 
             />
           </div>
           <div className="chart-summary">
-            Success Rate: {dashboardData?.emailDeliveryStats ? 
+            Success Rate: {dashboardData?.emailDeliveryStats && (dashboardData.emailDeliveryStats.delivered + dashboardData.emailDeliveryStats.failed) > 0 ? 
               Math.round((dashboardData.emailDeliveryStats.delivered / 
               (dashboardData.emailDeliveryStats.delivered + dashboardData.emailDeliveryStats.failed)) * 100) : 0}%
           </div>
@@ -379,7 +379,7 @@ const AnalyticsCharts = ({ dashboardData, certificateData, emailData, onRefresh 
             />
           </div>
           <div className="chart-summary">
-            Avg Delivery Rate: {emailData?.campaigns ? 
+            Avg Delivery Rate: {emailData?.campaigns && emailData.campaigns.length > 0 ? 
               Math.round(emailData.campaigns.reduce((acc, camp) => acc + camp.deliveryRate, 0) / emailData.campaigns.length) : 0}%
           </div>
         </div>

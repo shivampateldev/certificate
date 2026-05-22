@@ -268,8 +268,112 @@ class IDGenerationService {
     };
   }
 
+  /**
+   * Evaluate a custom ID pattern string for a specific recipient
+   */
+  generateCustomCertificateId(pattern, nameVal = '', row = {}) {
+    if (!pattern) return '';
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    let result = pattern;
+
+    // Helper for pure JS UUID
+    const uuidv4 = () => {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    };
+
+    // 1. Replace {{uuid}}
+    result = result.replace(/\{\{\s*uuid\s*\}\}/gi, () => uuidv4());
+
+    // 2. Replace {{year}}
+    result = result.replace(/\{\{\s*year\s*\}\}/gi, () => year);
+
+    // 3. Replace {{month}}
+    result = result.replace(/\{\{\s*month\s*\}\}/gi, () => month);
+
+    // 4. Replace {{day}}
+    result = result.replace(/\{\{\s*day\s*\}\}/gi, () => day);
+
+    // 5. Replace {{column_name(start, end)}}
+    result = result.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*\}\}/gi, (match, colName, start, end) => {
+      const s = parseInt(start);
+      const e = parseInt(end);
+      const matchKey = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9_]/g, '') === colName.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+      let val = matchKey ? row[matchKey] : '';
+      if (!val && colName.toLowerCase() === 'name') {
+        val = nameVal;
+      }
+      if (!val) return '';
+      const slice = String(val).substring(s, e);
+      return slice.charAt(0).toUpperCase() + slice.slice(1);
+    });
+
+    // 6. Replace {{random_number(digits)}}
+    result = result.replace(/\{\{\s*random_number\s*\(\s*(\d+)\s*\)\s*\}\}/gi, (match, digits) => {
+      const len = parseInt(digits) || 6;
+      let numStr = '';
+      for (let i = 0; i < len; i++) {
+        numStr += Math.floor(Math.random() * 10).toString();
+      }
+      return numStr;
+    });
+
+    // 7. Replace {{column_name}} (Full column value)
+    result = result.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/gi, (match, colName) => {
+      const lower = colName.toLowerCase();
+      if (['uuid', 'year', 'month', 'day'].includes(lower)) return match;
+      
+      const matchKey = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9_]/g, '') === lower.replace(/[^a-z0-9_]/g, ''));
+      let val = matchKey ? row[matchKey] : '';
+      if (!val && lower === 'name') {
+        val = nameVal;
+      }
+      return val ? String(val) : '';
+    });
+
+    return result;
+  }
+
+  /**
+   * Validate standard custom patterns and flag syntax typos
+   */
+  validateIdPattern(pattern) {
+    if (!pattern) return true;
+    const doubleBracesRegex = /\{\{([^}]+)\}\}/g;
+    let match;
+    const allowedPatterns = [
+      /^uuid$/i,
+      /^year$/i,
+      /^month$/i,
+      /^day$/i,
+      /^[a-zA-Z0-9_]+\(\s*\d+\s*,\s*\d+\s*\)$/i,
+      /^random_number\(\s*\d+\s*\)$/i,
+      /^[a-zA-Z0-9_]+$/i
+    ];
+
+    while ((match = doubleBracesRegex.exec(pattern)) !== null) {
+      const token = match[1].trim();
+      let isAllowed = false;
+      for (const regex of allowedPatterns) {
+        if (regex.test(token)) {
+          isAllowed = true;
+          break;
+        }
+      }
+      if (!isAllowed) {
+        throw new Error(`Invalid or unsupported token: "${token}"`);
+      }
+    }
+    return true;
+  }
+
   constructor() {
-    // In-memory set for tracking generated IDs (fallback)
     this.inMemoryIds = new Set();
   }
 }

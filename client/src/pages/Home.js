@@ -1,13 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../services/api';
 import './Home.css';
-
-const stats = [
-  { icon: '⊞', label: 'Certificates Generated', value: '—', change: 'All time', color: 'purple' },
-  { icon: '⧇', label: 'Total Participants', value: '—', change: 'Across all batches', color: 'cyan' },
-  { icon: '⧄', label: 'Emails Sent', value: '—', change: 'Via mass mailer', color: 'green' },
-  { icon: '⧉', label: 'Templates', value: '2+', change: 'Ready to use', color: 'amber' },
-];
 
 const features = [
   {
@@ -59,78 +53,111 @@ const steps = [
   { n: '4', icon: '⧁', title: 'Generate & Send', desc: 'Generate all certificates and distribute via mass mailer.' },
 ];
 
-const Home = () => (
-  <div className="home-page">
-    {/* Hero Banner */}
-    <div className="hero-banner">
-      <h1>Certificate Management Platform</h1>
-      <p>Generate professional certificates, manage participants, and send bulk emails — all in one place.</p>
-      <div className="hero-banner-actions">
-        <Link to="/generate" className="btn btn-white">Generate Certificates</Link>
-        <Link to="/mass-mailer" className="btn btn-outline-white">Send Emails</Link>
-      </div>
-    </div>
+const Home = () => {
+  const [stats, setStats] = useState([
+    { icon: '⊞', label: 'Certificates Generated', value: '—', change: 'All time', color: 'purple' },
+    { icon: '⧇', label: 'Total Participants', value: '—', change: 'Across all batches', color: 'cyan' },
+    { icon: '⧄', label: 'Emails Sent', value: '—', change: 'Via mass mailer', color: 'green' },
+    { icon: '⧉', label: 'Templates', value: '—', change: 'Ready to use', color: 'amber' },
+  ]);
 
-    {/* Stats */}
-    <div className="grid grid-4 mb-6">
-      {stats.map((s, i) => (
-        <div className="stat-card" key={i}>
-          <div className={`stat-icon ${s.color}`}>{s.icon}</div>
-          <div className="stat-info">
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value">{s.value}</div>
-            <div className="stat-change">{s.change}</div>
+  useEffect(() => {
+    let active = true;
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/reports/dashboard');
+        if (active && response.data && response.data.success) {
+          const data = response.data.data.summary;
+          setStats([
+            { icon: '⊞', label: 'Certificates Generated', value: data.totalCertificates ?? 0, change: 'All time', color: 'purple' },
+            { icon: '⧇', label: 'Total Participants', value: data.totalCertificates ?? 0, change: 'Across all batches', color: 'cyan' },
+            { icon: '⧄', label: 'Emails Sent', value: data.totalEmailsSent ?? 0, change: 'Via mass mailer', color: 'green' },
+            { icon: '⧉', label: 'Templates', value: data.totalTemplates ?? 0, change: 'Ready to use', color: 'amber' },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    };
+    fetchStats();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div className="home-page">
+      {/* Hero Banner */}
+      <div className="hero-banner">
+        <h1>Certificate Management Platform</h1>
+        <p>Generate professional certificates, manage participants, and send bulk emails — all in one place.</p>
+        <div className="hero-banner-actions">
+          <Link to="/generate" className="btn btn-white">Generate Certificates</Link>
+          <Link to="/mass-mailer" className="btn btn-outline-white">Send Emails</Link>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-4 mb-6">
+        {stats.map((s, i) => (
+          <div className="stat-card" key={i}>
+            <div className={`stat-icon ${s.color}`}>{s.icon}</div>
+            <div className="stat-info">
+              <div className="stat-label">{s.label}</div>
+              <div className="stat-value">{s.value}</div>
+              <div className="stat-change">{s.change}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Features */}
+      <div className="card mb-6">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Platform Features</div>
+            <div className="card-subtitle">Everything you need to manage certificates</div>
           </div>
         </div>
-      ))}
-    </div>
-
-    {/* Features */}
-    <div className="card mb-6">
-      <div className="card-header">
-        <div>
-          <div className="card-title">Platform Features</div>
-          <div className="card-subtitle">Everything you need to manage certificates</div>
-        </div>
-      </div>
-      <div className="card-body">
-        <div className="features-grid">
-          {features.map((f, i) => (
-            <div className={`feature-card feature-${f.color}`} key={i}>
-              <div className="feature-card-icon">{f.icon}</div>
-              <div className="feature-card-body">
-                <h3>{f.title}</h3>
-                <p>{f.desc}</p>
+        <div className="card-body">
+          <div className="features-grid">
+            {features.map((f, i) => (
+              <div className={`feature-card feature-${f.color}`} key={i}>
+                <div className="feature-card-icon">{f.icon}</div>
+                <div className="feature-card-body">
+                  <h3>{f.title}</h3>
+                  <p>{f.desc}</p>
+                </div>
+                <Link to={f.link} className="btn btn-primary btn-sm feature-card-btn">{f.cta} →</Link>
               </div>
-              <Link to={f.link} className="btn btn-primary btn-sm feature-card-btn">{f.cta} →</Link>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* How it works */}
-    <div className="card">
-      <div className="card-header">
-        <div>
-          <div className="card-title">How It Works</div>
-          <div className="card-subtitle">4 simple steps to generate and distribute certificates</div>
+      {/* How it works */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">How It Works</div>
+            <div className="card-subtitle">4 simple steps to generate and distribute certificates</div>
+          </div>
         </div>
-      </div>
-      <div className="card-body">
-        <div className="steps-grid">
-          {steps.map((s, i) => (
-            <div className="step-card" key={i}>
-              <div className="step-number">{s.n}</div>
-              <div className="step-icon">{s.icon}</div>
-              <h4>{s.title}</h4>
-              <p>{s.desc}</p>
-            </div>
-          ))}
+        <div className="card-body">
+          <div className="steps-grid">
+            {steps.map((s, i) => (
+              <div className="step-card" key={i}>
+                <div className="step-number">{s.n}</div>
+                <div className="step-icon">{s.icon}</div>
+                <h4>{s.title}</h4>
+                <p>{s.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default Home;

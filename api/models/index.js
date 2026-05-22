@@ -312,6 +312,24 @@ const GeneratedCertificateModel = {
       docs.push({ id: doc.id, ...doc.data() });
     });
     return docs;
+  },
+
+  async getByCertificateId(certificateId) {
+    const snapshot = await db.collection('generated_certificates').where('certificate_id', '==', certificateId).get();
+    const docs = [];
+    snapshot.forEach(doc => {
+      docs.push({ id: doc.id, ...doc.data() });
+    });
+    return docs.length > 0 ? docs[0] : null;
+  },
+
+  async getAll() {
+    const snapshot = await db.collection('generated_certificates').get();
+    const docs = [];
+    snapshot.forEach(doc => {
+      docs.push({ id: doc.id, ...doc.data() });
+    });
+    return docs;
   }
 };
 

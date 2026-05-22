@@ -146,16 +146,19 @@ async function initializeServer() {
     const dbConnected = await testConnection();
     if (dbConnected) {
       console.log('✓ Database connection established');
+      const { syncDatabase } = require('./utils/database');
+      await syncDatabase();
     } else {
       console.warn('⚠ Database connection failed - running in fallback mode');
     }
     
     // Start server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`✓ Server running on port ${PORT}`);
       console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`✓ API endpoints available at http://localhost:${PORT}/api`);
     });
+    server.timeout = 120000;
   } catch (error) {
     console.error('Failed to initialize server:', error);
     process.exit(1);

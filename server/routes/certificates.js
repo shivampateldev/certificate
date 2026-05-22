@@ -487,8 +487,8 @@ router.post('/upload',
   validateParticipantData,
   async (req, res) => {
     try {
-      // Process the file using the file type determined by validation middleware
-      const result = await processParticipantFile(req.file.path, req.fileType);
+      // Process the file using the file type determined by validation middleware and custom ID template pattern if present
+      const result = await processParticipantFile(req.file.path, req.fileType, req.body.certificateIdPattern);
 
       // If there are validation errors but some valid data, return partial success
       if (result.errors.length > 0 && result.participants.length > 0) {
@@ -1017,7 +1017,8 @@ router.get('/batch/:id/export/csv', async (req, res) => {
     }
 
     const participants = await getParticipantsByBatch(batchId);
-    const csvData = exportParticipantsToCSV(participants);
+    const host = `${req.protocol}://${req.get('host')}`;
+    const csvData = exportParticipantsToCSV(participants, host);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="participants-batch-${batchId}.csv"`);
@@ -1051,7 +1052,8 @@ router.get('/batch/:id/export/excel', async (req, res) => {
     }
 
     const participants = await getParticipantsByBatch(batchId);
-    const excelBuffer = exportParticipantsToExcel(participants);
+    const host = `${req.protocol}://${req.get('host')}`;
+    const excelBuffer = exportParticipantsToExcel(participants, host);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="participants-batch-${batchId}.xlsx"`);

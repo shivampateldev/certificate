@@ -1,30 +1,42 @@
 [
   {
-    "id": "template_1779362564194_959obfq",
-    "template_name": "Ctrl_Alt_Delusion_Final_Approval",
-    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Ctrl_Alt_Delusion_Final_Approval.pdf",
-    "file_type": "pdf",
-    "width": 800,
-    "height": 600,
-    "thumbnail_path": null,
-    "is_active": true,
-    "uploaded_at": "2026-05-21T11:22:44.194Z",
-    "updated_at": "2026-05-21T11:22:44.194Z"
-  },
-  {
-    "id": "template_1779362625774_3l88wun",
-    "template_name": "Blank-Certificate-Of-Recognition",
-    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\e1e90ad3-545c-4389-b209-faec1c714ac1.png",
+    "id": "template_1779423911576_2xnktfd",
+    "template_name": "Blue And White Minimalist Employee Of The Month Certificate",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Blue_And_White_Minimalist_Employee_Of_The_Month_Certificate.png",
     "file_type": "png",
     "width": 800,
     "height": 600,
     "thumbnail_path": null,
     "is_active": true,
-    "uploaded_at": "2026-05-21T11:23:45.774Z",
-    "updated_at": "2026-05-21T11:23:45.774Z"
+    "uploaded_at": "2026-05-22T04:25:11.576Z",
+    "updated_at": "2026-05-22T04:25:11.576Z"
   },
   {
-    "id": "template_1779363032575_49575kj",
+    "id": "template_1779426336410_09q6h77",
+    "template_name": "Blue And White Minimalist Employee Of The Month Certificate",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Blue_And_White_Minimalist_Employee_Of_The_Month_Certificate.png",
+    "file_type": "png",
+    "width": 800,
+    "height": 600,
+    "thumbnail_path": null,
+    "is_active": true,
+    "uploaded_at": "2026-05-22T05:05:36.410Z",
+    "updated_at": "2026-05-22T05:05:36.410Z"
+  },
+  {
+    "id": "template_1779428243172_zxkwk25",
+    "template_name": "Blue And White Minimalist Employee Of The Month Certificate",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Blue_And_White_Minimalist_Employee_Of_The_Month_Certificate.png",
+    "file_type": "png",
+    "width": 800,
+    "height": 600,
+    "thumbnail_path": null,
+    "is_active": true,
+    "uploaded_at": "2026-05-22T05:37:23.172Z",
+    "updated_at": "2026-05-22T05:37:23.172Z"
+  },
+  {
+    "id": "template_1779430660629_4i5d0te",
     "template_name": "Blank-Certificate-Of-Recognition",
     "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Blank-Certificate-Of-Recognition.jpg",
     "file_type": "jpg",
@@ -32,7 +44,7 @@
     "height": 600,
     "thumbnail_path": null,
     "is_active": true,
-    "uploaded_at": "2026-05-21T11:30:32.575Z",
-    "updated_at": "2026-05-21T11:30:32.575Z"
+    "uploaded_at": "2026-05-22T06:17:40.629Z",
+    "updated_at": "2026-05-22T06:17:40.629Z"
   }
 ]
