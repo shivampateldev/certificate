@@ -70,7 +70,12 @@ const TemplateUploader = ({ onTemplateUploaded, onCancel }) => {
       );
 
       if (response.data.success) {
-        toast.success('Template uploaded successfully!');
+        const detectedFields = response.data.data?.fields || [];
+        if (detectedFields.length > 0) {
+          toast.success(`Template uploaded and ${detectedFields.length} placeholder(s) detected: ${detectedFields.map(field => field.field_name).join(', ')}`);
+        } else {
+          toast.success('Template uploaded successfully! No placeholders were auto-detected; default field mapping will be used.');
+        }
         if (onTemplateUploaded) {
           onTemplateUploaded(response.data.data);
         }

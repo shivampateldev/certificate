@@ -58,5 +58,17 @@
     "is_active": true,
     "uploaded_at": "2026-05-25T06:48:24.051Z",
     "updated_at": "2026-05-25T06:48:24.051Z"
+  },
+  {
+    "id": "template_1779693726645_nt4dpbv",
+    "template_name": "Blue And White Minimalist Employee Of The Month Certificate",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Blue_And_White_Minimalist_Employee_Of_The_Month_Certificate.png",
+    "file_type": "png",
+    "width": 800,
+    "height": 600,
+    "thumbnail_path": null,
+    "is_active": true,
+    "uploaded_at": "2026-05-25T07:22:06.645Z",
+    "updated_at": "2026-05-25T07:22:06.645Z"
   }
 ]

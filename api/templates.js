@@ -9,6 +9,7 @@ const path = require('path');
 const { TemplateModel, TemplateFieldModel } = require('./models');
 const FileHandler = require('./utils/fileHandler');
 const Validators = require('./utils/validators');
+const TemplateScanner = require('./utils/templateScanner');
 
 module.exports.config = { api: { bodyParser: false } };
 
@@ -249,62 +250,9 @@ async function handler(req, res) {
               height
             });
 
-            let autoFields = [];
-            if (ext === 'pdf') {
-              try {
-                const { scanPDFPlaceholders } = require('./utils/pdfParser');
-                autoFields = await scanPDFPlaceholders(fileBuffer);
-              } catch (scanErr) {
-                console.error('Error auto-scanning PDF placeholders:', scanErr.message);
-              }
-            }
-
-            // Check filename for placeholders as a primary image/name fallback
+            const autoFields = await TemplateScanner.detectTemplateFields(fileBuffer, fileName, ext);
             if (autoFields.length === 0) {
-              const nameMatches = [...fileName.matchAll(/\{\{\s*([a-zA-Z0-9_(),.-]+)\s*\}\}/g)];
-              if (nameMatches.length > 0) {
-                autoFields = nameMatches.map((m, idx) => ({
-                  field_name: m[1].trim(),
-                  x: 150 + idx * 120,
-                  y: 350,
-                  font_size: 24,
-                  font_family: 'Arial',
-                  alignment: 'center',
-                  color: '#000000'
-                }));
-              }
-            }
-
-            // Fallback: scan binary buffer for UTF-8 metadata placeholders
-            if (autoFields.length === 0) {
-              try {
-                const fileStr = fileBuffer.toString('utf8', 0, Math.min(fileBuffer.length, 1024 * 1024));
-                const metaMatches = [...fileStr.matchAll(/\{\{\s*([a-zA-Z0-9_(),.-]+)\s*\}\}/g)];
-                if (metaMatches.length > 0) {
-                  const uniqueMeta = Array.from(new Set(metaMatches.map(m => m[1].trim())));
-                  autoFields = uniqueMeta.map((placeholder, idx) => ({
-                    field_name: placeholder,
-                    x: 200 + idx * 100,
-                    y: 380,
-                    font_size: 28,
-                    font_family: 'Arial',
-                    alignment: 'center',
-                    color: '#000000'
-                  }));
-                }
-              } catch (err) {
-                console.error('Binary metadata scanning failed:', err);
-              }
-            }
-
-            // Flawless default placeholders if completely blank
-            if (autoFields.length === 0) {
-              autoFields = [
-                { field_name: 'name', x: 400, y: 250, font_size: 32, font_family: 'Arial', alignment: 'center', color: '#000000' },
-                { field_name: 'course', x: 400, y: 320, font_size: 24, font_family: 'Arial', alignment: 'center', color: '#000000' },
-                { field_name: 'date', x: 400, y: 390, font_size: 20, font_family: 'Arial', alignment: 'center', color: '#000000' },
-                { field_name: 'certificate_id', x: 400, y: 460, font_size: 16, font_family: 'Arial', alignment: 'center', color: '#000000' }
-              ];
+              console.warn(`Template upload: no placeholders detected for ${fileName} (${ext})`);
             }
 
             // Save detected placeholders into database
@@ -314,16 +262,26 @@ async function handler(req, res) {
                 field_name: field.field_name,
                 x: field.x,
                 y: field.y,
+                width: field.width || 300,
+                height: field.height || 40,
                 font_size: field.font_size,
                 font_family: field.font_family,
+                font_weight: field.font_weight || 'normal',
+                font_style: field.font_style || 'normal',
+                color: field.color || '#000000',
                 alignment: field.alignment || 'center',
-                color: field.color || '#000000'
+                rotation: field.rotation || 0,
+                letter_spacing: field.letter_spacing || 0,
+                line_height: field.line_height || 0
               });
             }
 
             return res.status(201).json({
               success: true,
-              data: template,
+              data: {
+                ...template,
+                fields: autoFields
+              },
               autoFieldsCount: autoFields.length,
               message: `Template uploaded successfully. Automatically detected and registered ${autoFields.length} placeholders!`
             });
