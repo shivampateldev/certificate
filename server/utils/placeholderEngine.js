@@ -14,14 +14,41 @@ function evaluatePlaceholder(fieldName, dataRow) {
   const transformer = parts[1] ? parts[1].trim().toLowerCase() : null;
 
   let value = '';
-  const searchKey = baseKey.toLowerCase();
+  const searchKey = baseKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+  
+  // Supported variant spellings of certificate ID (including common typos)
+  const isCertIdKey = [
+    'certificateid',
+    'certificated',
+    'certifiacte_id',
+    'certificate_id',
+    'certifiacteid',
+    'certificateid'
+  ].includes(searchKey);
+
   for (const k of Object.keys(dataRow)) {
-    if (k.toLowerCase() === searchKey) {
+    const normKey = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isRowCertId = [
+      'certificateid',
+      'certificated',
+      'certifiacte_id',
+      'certificate_id',
+      'certifiacteid',
+      'certificateid'
+    ].includes(normKey);
+    
+    if (isCertIdKey && isRowCertId) {
+      value = String(dataRow[k]);
+      break;
+    }
+    
+    if (normKey === searchKey) {
       value = String(dataRow[k]);
       break;
     }
   }
 
+  // Apply transforms
   if (transformer === 'upper') {
     value = value.toUpperCase();
   } else if (transformer === 'lower') {

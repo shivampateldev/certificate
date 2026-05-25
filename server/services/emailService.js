@@ -528,20 +528,17 @@ class EmailService {
    * @returns {object} Personalized template
    */
   personalizeEmailTemplate(template, participant) {
-    const personalizedSubject = template.subject
-      .replace(/{{name}}/g, participant.name || 'Participant')
-      .replace(/{{certificateId}}/g, participant.certificateId || 'N/A')
-      .replace(/{{email}}/g, participant.email || '');
+    const replacePlaceholders = (text, rName, rCertId, rEmail) => {
+      if (!text) return '';
+      return text
+        .replace(/\{\{?\s*name\s*\}?\}/gi, rName || 'Participant')
+        .replace(/\{\{?\s*email\s*\}?\}/gi, rEmail || '')
+        .replace(/\{\{?\s*(certificateid|certificated|certifiacte_id|certificate_id|certificate\s*id)\s*\}?\}/gi, rCertId || 'N/A');
+    };
 
-    const personalizedHtmlBody = template.htmlBody
-      .replace(/{{name}}/g, participant.name || 'Participant')
-      .replace(/{{certificateId}}/g, participant.certificateId || 'N/A')
-      .replace(/{{email}}/g, participant.email || '');
-
-    const personalizedTextBody = template.textBody
-      .replace(/{{name}}/g, participant.name || 'Participant')
-      .replace(/{{certificateId}}/g, participant.certificateId || 'N/A')
-      .replace(/{{email}}/g, participant.email || '');
+    const personalizedSubject = replacePlaceholders(template.subject, participant.name, participant.certificateId, participant.email);
+    const personalizedHtmlBody = replacePlaceholders(template.htmlBody, participant.name, participant.certificateId, participant.email);
+    const personalizedTextBody = replacePlaceholders(template.textBody, participant.name, participant.certificateId, participant.email);
 
     return {
       subject: personalizedSubject,

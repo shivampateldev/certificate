@@ -105,6 +105,162 @@ function hexToRgb(hex) {
   } : { r: 0, g: 0, b: 0 };
 }
 
+/**
+ * HTML escape helper to prevent template literal syntax from appearing in output
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Typo-tolerant and case-insensitive placeholder replacement helper.
+ */
+function replacePlaceholders(text, rName, rCertId) {
+  if (!text) return '';
+  return text
+    .replace(/\{\{?\s*name\s*\}?\}/gi, rName || '')
+    .replace(/\{\{?\s*(certificateid|certificated|certifiacte_id|certificate_id|certificate\s*id)\s*\}?\}/gi, rCertId || '');
+}
+
+// Helper to wrap email body in a stunning modern template matching a color preset & header style
+function wrapEmailInTemplate(bodyHtml, options, headerImageName) {
+  if (!bodyHtml) bodyHtml = '';
+  
+  const {
+    headerType = 'none',
+    colorTheme = 'purple',
+    backgroundType = 'light',
+    headerTitle = '',
+    headerSubtitle = '',
+    headerBadge = ''
+  } = options;
+
+  // Resolve color palettes
+  const palettes = {
+    purple: { primary: '#4f46e5', secondary: '#4338ca', accent: '#7c3aed' },
+    emerald: { primary: '#10b981', secondary: '#059669', accent: '#34d399' },
+    blue: { primary: '#0284c7', secondary: '#0369a1', accent: '#38bdf8' },
+    red: { primary: '#ef4444', secondary: '#dc2626', accent: '#f87171' },
+    amber: { primary: '#f59e0b', secondary: '#d97706', accent: '#fbbf24' }
+  };
+
+  // Check for custom hex color or default to purple
+  let themeColors = palettes[colorTheme];
+  if (!themeColors) {
+    if (colorTheme && colorTheme.startsWith('#')) {
+      themeColors = { primary: colorTheme, secondary: colorTheme, accent: colorTheme };
+    } else {
+      themeColors = palettes.purple;
+    }
+  }
+
+  const primaryColor = themeColors.primary;
+  const secondaryColor = themeColors.secondary;
+
+  // Background and text settings
+  const isDark = backgroundType === 'dark';
+  const outerBg = isDark ? '#0f172a' : '#f1f5f9';
+  const cardBg = isDark ? '#1e293b' : '#ffffff';
+  const textColor = isDark ? '#f8fafc' : '#1e293b';
+  const mutedTextColor = isDark ? '#94a3b8' : '#64748b';
+  const borderColor = isDark ? '#334155' : '#e2e8f0';
+  const footerBg = isDark ? '#0f172a' : '#f8fafc';
+
+  // Build header HTML
+  let headerHtml = '';
+
+  if (headerType === 'promptwars') {
+    const title = headerTitle || 'In-person PromptWars';
+    const subtitle = headerSubtitle || 'Build, pitch & win in one day';
+    const badge = headerBadge || 'Google for Developers | H2S';
+
+    headerHtml = `
+      <div style="background-color: #0b0f19; background-image: radial-gradient(circle at top, rgba(16, 185, 129, 0.2) 0%, transparent 60%); padding: 40px 30px; text-align: center; border-bottom: 3px solid #10b981; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+        <div style="width: 80px; height: 4px; background: #10b981; margin: -40px auto 25px; border-radius: 0 0 4px 4px; box-shadow: 0 0 20px 4px #10b981;"></div>
+        <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 15px; width: 100%;">
+          <tr>
+            <td align="left" style="color: #ffffff; font-size: 12px; font-weight: bold; opacity: 0.85; font-family: 'Inter', sans-serif;">
+              ${badge}
+            </td>
+            <td align="right" style="color: #10b981; font-size: 12px; font-weight: bold; letter-spacing: 1px; font-family: 'Inter', sans-serif;">
+              [ BUILD WITH AI ]
+            </td>
+          </tr>
+        </table>
+        <div style="color: #10b981; font-size: 14px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px; font-family: 'Inter', sans-serif;">In-person</div>
+        <h1 style="color: #ffffff; font-size: 32px; font-weight: 800; margin: 0 0 16px 0; letter-spacing: -0.5px; font-family: 'Inter', sans-serif;">
+          ${title}
+        </h1>
+        <div style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #f59e0b 100%); color: #000000; font-size: 13px; font-weight: bold; padding: 8px 24px; border-radius: 30px; margin-bottom: 16px; font-family: 'Inter', sans-serif;">
+          ✨ ${subtitle}
+        </div>
+        <div style="color: #94a3b8; font-size: 13px; font-family: monospace;">Compiling India.dev...</div>
+      </div>
+    `;
+  } else if (headerType === 'logos') {
+    headerHtml = `
+      <div style="background-color: #ffffff; padding: 25px 30px; text-align: center; border-bottom: 2px solid ${primaryColor}; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+        <div style="font-size: 11px; font-weight: 700; color: ${primaryColor}; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; font-family: 'Inter', sans-serif;">Event Invitation</div>
+        <div style="font-size: 20px; font-weight: 800; color: #0f172a; font-family: 'Inter', sans-serif;">Silver Oak University & IEEE SB</div>
+      </div>
+    `;
+  } else if (headerType === 'custom' && headerImageName) {
+    headerHtml = `
+      <div style="text-align: center;">
+        <img src="cid:headerImage" style="width: 100%; max-width: 600px; display: block; border-top-left-radius: 16px; border-top-right-radius: 16px;" alt="Header Image" />
+      </div>
+    `;
+  }
+
+  // Build header row HTML
+  const headerRow = headerHtml 
+    ? `<tr><td style="padding: 0;">${headerHtml}</td></tr>`
+    : `<tr><td style="padding: 0; height: 6px; background-color: ${primaryColor};"></td></tr>`;
+
+  // Construct complete premium HTML
+  const htmlTemplate = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Notification</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+body {
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+</style>
+</head>
+<body style="margin: 0; padding: 0; width: 100%; background-color: ${outerBg}; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+<div style="background-color: ${outerBg}; padding: 30px 15px; min-height: 100%;">
+<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: ${cardBg}; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid ${borderColor}; border-collapse: collapse;">
+${headerRow}
+<tr>
+<td style="padding: 40px 30px; color: ${textColor}; font-size: 16px; line-height: 1.6; font-family: sans-serif;">
+${bodyHtml}
+</td>
+</tr>
+<tr>
+<td style="padding: 24px 30px; background-color: ${footerBg}; border-top: 1px solid ${borderColor}; text-align: center; color: ${mutedTextColor}; font-size: 12px; font-family: sans-serif; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+<div style="font-weight: bold; color: ${primaryColor}; margin-bottom: 8px;">Sent via Certificate Management Platform</div>
+<div>Silver Oak University • IEEE Student Branch</div>
+<div style="margin-top: 8px; opacity: 0.8;">If you did not expect this email, you can safely ignore it.</div>
+</td>
+</tr>
+</table>
+</div>
+</body>
+</html>`;
+
+  return htmlTemplate;
+}
+
 // Generate certificate PDF dynamically using a template and recipient data
 async function generateCertificateFromTemplate(template, fields, recipient) {
   const { PDFDocument, rgb } = require('pdf-lib');
@@ -139,11 +295,7 @@ async function generateCertificateFromTemplate(template, fields, recipient) {
     } else if (recipient[field.field_name]) {
       text = recipient[field.field_name];
     } else {
-      text = field.field_name
-        .replace(/\{\{name\}\}/gi, recipient.name || '')
-        .replace(/\{\{email\}\}/gi, recipient.email || '')
-        .replace(/\{\{certificate_id\}\}/gi, recipient.certificate_id || recipient.certificateId || '')
-        .replace(/\{\{certificateid\}\}/gi, recipient.certificate_id || recipient.certificateId || '');
+      text = replacePlaceholders(field.field_name, recipient.name || '', recipient.certificate_id || recipient.certificateId || '');
     }
 
     if (!text) continue;
@@ -445,13 +597,33 @@ async function handler(req, res) {
         let senderEmail = '';
         let templateId = '';
 
+        // Design Customization fields
+        let campaignType = 'certificate';
+        let headerType = 'none';
+        let colorTheme = 'purple';
+        let backgroundType = 'light';
+        let headerTitle = '';
+        let headerSubtitle = '';
+        let headerBadge = '';
+        
+        let headerImageBuffer = null;
+        let headerImageName = '';
+
         busboy.on('field', (fieldname, val) => {
-          if (fieldname === 'subject') emailSubject = val;
-          if (fieldname === 'body') emailBody = val;
-          if (fieldname === 'senderDisplayName') senderDisplayName = val;
-          if (fieldname === 'accessToken') accessToken = val;
-          if (fieldname === 'senderEmail') senderEmail = val;
-          if (fieldname === 'templateId') templateId = val;
+          const cleanVal = typeof val === 'string' ? val.trim() : val;
+          if (fieldname === 'subject') emailSubject = cleanVal;
+          if (fieldname === 'body') emailBody = val; // Keep original formatting for email body template
+          if (fieldname === 'senderDisplayName') senderDisplayName = cleanVal;
+          if (fieldname === 'accessToken') accessToken = cleanVal;
+          if (fieldname === 'senderEmail') senderEmail = cleanVal;
+          if (fieldname === 'templateId') templateId = cleanVal;
+          if (fieldname === 'campaignType') campaignType = cleanVal;
+          if (fieldname === 'headerType') headerType = cleanVal;
+          if (fieldname === 'colorTheme') colorTheme = cleanVal;
+          if (fieldname === 'backgroundType') backgroundType = cleanVal;
+          if (fieldname === 'headerTitle') headerTitle = cleanVal;
+          if (fieldname === 'headerSubtitle') headerSubtitle = cleanVal;
+          if (fieldname === 'headerBadge') headerBadge = cleanVal;
         });
 
         let activeStreams = 0;
@@ -473,6 +645,9 @@ async function handler(req, res) {
             else if (fieldname === 'csvfile') {
               csvBuffer = Buffer.concat(chunks);
               csvFileName = info.filename || 'recipients.csv';
+            } else if (fieldname === 'headerImage') {
+              headerImageBuffer = Buffer.concat(chunks);
+              headerImageName = info.filename || 'header.jpg';
             } else if (fieldname === 'custom_attachments' || fieldname === 'custom_attachment' || fieldname.startsWith('custom_attachment_')) {
               customAttachments.push({
                 filename: info.filename,
@@ -525,7 +700,7 @@ async function handler(req, res) {
 
             // Optional ZIP file parsing for attachments
             let zipEntries = [];
-            if (zipBuffer) {
+            if (zipBuffer && campaignType === 'certificate') {
               try {
                 const AdmZip = require('adm-zip');
                 const zip = new AdmZip(zipBuffer);
@@ -536,10 +711,10 @@ async function handler(req, res) {
               }
             }
 
-            // Load template and fields if templateId is provided
+            // Load template and fields if templateId is provided (only for certificate campaign)
             let template = null;
             let fields = [];
-            if (templateId) {
+            if (templateId && campaignType === 'certificate') {
               try {
                 template = await TemplateModel.getById(templateId);
                 if (template) {
@@ -594,8 +769,8 @@ async function handler(req, res) {
                   });
                 }
 
-                // If template mode, generate simulated certificate
-                if (template && fields.length > 0) {
+                // If template mode and certificate campaign, generate simulated certificate
+                if (campaignType === 'certificate' && template && fields.length > 0) {
                   try {
                     const dynamicCertBuffer = await generateCertificateFromTemplate(template, fields, recipient);
                     const FileHandler = require('./utils/fileHandler');
@@ -632,91 +807,178 @@ async function handler(req, res) {
               for (const recipient of recipients) {
                 let participantObj = null;
                 try {
-                  const personalBody = emailBody
-                    .replace(/\{Name\}/gi, recipient.name || '')
-                    .replace(/\{CertificateID\}/gi, recipient.certificateId || recipient.certificate_id || '');
+
+
+                  const recipientCertId = recipient.certificate_id || recipient.certificateId || '';
+                  const personalSubject = replacePlaceholders(emailSubject, recipient.name, recipientCertId);
+                  const personalBody = replacePlaceholders(emailBody, recipient.name, recipientCertId);
 
                   const htmlBody = personalBody.replace(/\n/g, '<br>');
+                  
+                  // Premium Certificate Info Badge Card
+                  let finalHtmlBody = htmlBody;
+                  if (campaignType === 'certificate' && recipientCertId) {
+                    const themeHex = colorTheme && colorTheme.startsWith('#') ? colorTheme : (colorTheme === 'emerald' ? '#10b981' : (colorTheme === 'blue' ? '#0284c7' : (colorTheme === 'red' ? '#ef4444' : (colorTheme === 'amber' ? '#f59e0b' : '#4f46e5'))));
+                    const isDark = backgroundType === 'dark';
+                    finalHtmlBody += `
+                      <div style="margin-top: 30px; padding: 24px; background-color: ${isDark ? '#1e293b' : '#f8fafc'}; border: 1px dashed ${themeHex}; border-radius: 12px; text-align: center;">
+                        <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto; width: 100%;">
+                          <tr>
+                            <td align="center" style="padding-bottom: 12px;">
+                              <span style="font-size: 36px;">🎓</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td align="center">
+                              <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-bottom: 6px; font-family: sans-serif;">Official Verification ID</div>
+                              <div style="display: inline-block; background-color: ${themeHex}; color: #ffffff; font-family: monospace; font-size: 16px; font-weight: bold; padding: 8px 18px; border-radius: 8px; letter-spacing: 0.5px;">
+                                ${recipientCertId}
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td align="center" style="padding-top: 14px; color: ${isDark ? '#94a3b8' : '#64748b'}; font-size: 13px; line-height: 1.4; font-family: sans-serif;">
+                              Your verified certificate has been securely generated and attached to this email as a PDF.
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+                    `;
+                  }
+                  
+                  // Wrap email in selected theme and header style
+                  const formattedHtmlBody = wrapEmailInTemplate(finalHtmlBody, {
+                    headerType,
+                    colorTheme,
+                    backgroundType,
+                    headerTitle,
+                    headerSubtitle,
+                    headerBadge
+                  }, headerImageName);
+
+                  // Debug logging to verify HTML is properly formatted
+                  console.log(`[Email Debug] Preparing email for ${recipient.email}`);
+                  console.log(`[Email Debug] Header Type: ${headerType}, Theme: ${colorTheme}, Background: ${backgroundType}`);
+                  console.log(`[Email Debug] HTML Body starts with: ${formattedHtmlBody.substring(0, 100)}...`);
+                  if (formattedHtmlBody.includes('${')) {
+                    console.error(`[Email Error] HTML body contains template literal syntax - formatting failed!`);
+                  }
+
                   const fromStr = senderDisplayName
                     ? `"${senderDisplayName}" <${senderEmail}>`
                     : senderEmail;
 
-                  // Find matching certificate in ZIP or generate dynamically on the fly
+                  // Find matching certificate in ZIP or generate dynamically on the fly (Only if not a reminder campaign)
                   let attachmentData = null;
                   let attachmentName = null;
                   const certId = recipient.certificate_id || recipient.certificateId || `CERT-${Date.now()}`;
 
-                  if (template && fields.length > 0) {
-                    try {
-                      attachmentData = await generateCertificateFromTemplate(template, fields, recipient);
-                      attachmentName = `${certId}.pdf`;
-                      console.log(`Dynamically generated certificate for ${recipient.email}: ${attachmentName}`);
+                  if (campaignType === 'certificate') {
+                    if (template && fields.length > 0) {
+                      try {
+                        attachmentData = await generateCertificateFromTemplate(template, fields, recipient);
+                        attachmentName = `${certId}.pdf`;
+                        console.log(`Dynamically generated certificate for ${recipient.email}: ${attachmentName}`);
 
-                      // Register the participant if not exists
-                      participantObj = await ParticipantModel.getByEmail(recipient.email);
-                      if (!participantObj) {
-                        participantObj = await ParticipantModel.create({
-                          name: recipient.name,
-                          email: recipient.email,
-                          certificate_id: certId
+                        // Register the participant if not exists
+                        participantObj = await ParticipantModel.getByEmail(recipient.email);
+                        if (!participantObj) {
+                          participantObj = await ParticipantModel.create({
+                            name: recipient.name,
+                            email: recipient.email,
+                            certificate_id: certId
+                          });
+                        }
+
+                        // Save the generated certificate file
+                        const FileHandler = require('./utils/fileHandler');
+                        const genFileName = `${certId}_${Date.now()}.pdf`;
+                        const genFilePath = FileHandler.getStoragePath('certificates') + '/' + genFileName;
+                        const fs = require('fs');
+                        fs.writeFileSync(genFilePath, attachmentData);
+
+                        await GeneratedCertificateModel.create({
+                          generation_id: 'mass_gen_' + campaign.id,
+                          participant_id: participantObj.id,
+                          template_id: template.id,
+                          file_path: genFilePath,
+                          file_name: genFileName
                         });
+                      } catch (genErr) {
+                        console.error(`Failed to generate dynamic certificate for ${recipient.email}:`, genErr);
                       }
-
-                      // Save the generated certificate file
-                      const FileHandler = require('./utils/fileHandler');
-                      const genFileName = `${certId}_${Date.now()}.pdf`;
-                      const genFilePath = FileHandler.getStoragePath('certificates') + '/' + genFileName;
-                      const fs = require('fs');
-                      fs.writeFileSync(genFilePath, attachmentData);
-
-                      await GeneratedCertificateModel.create({
-                        generation_id: 'mass_gen_' + campaign.id,
-                        participant_id: participantObj.id,
-                        template_id: template.id,
-                        file_path: genFilePath,
-                        file_name: genFileName
+                    } else if (zipEntries.length > 0) {
+                      const matchingEntry = zipEntries.find(entry => {
+                        const filename = entry.entryName.split('/').pop();
+                        if (!filename) return false;
+                        const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+                        return nameWithoutExt.toLowerCase() === certId.toString().toLowerCase();
                       });
-                    } catch (genErr) {
-                      console.error(`Failed to generate dynamic certificate for ${recipient.email}:`, genErr);
-                    }
-                  } else if (zipEntries.length > 0) {
-                    const matchingEntry = zipEntries.find(entry => {
-                      const filename = entry.entryName.split('/').pop();
-                      if (!filename) return false;
-                      const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
-                      return nameWithoutExt.toLowerCase() === certId.toString().toLowerCase();
-                    });
-                    if (matchingEntry) {
-                      attachmentData = matchingEntry.getData();
-                      attachmentName = matchingEntry.entryName.split('/').pop() || `${certId}.pdf`;
-                      console.log(`Found certificate attachment: ${attachmentName} for ${recipient.email}`);
-                    } else {
-                      console.warn(`No matching certificate in ZIP for ID: ${certId}`);
-                      // Fallback: If there is exactly one file in the ZIP, use it as fallback!
-                      const pdfEntries = zipEntries.filter(entry => !entry.isDirectory && entry.entryName.toLowerCase().endsWith('.pdf'));
-                      const fallbackEntry = pdfEntries.length === 1 ? pdfEntries[0] : (zipEntries.filter(entry => !entry.isDirectory).length === 1 ? zipEntries.filter(entry => !entry.isDirectory)[0] : null);
-                      if (fallbackEntry) {
-                        attachmentData = fallbackEntry.getData();
-                        attachmentName = fallbackEntry.entryName.split('/').pop() || 'certificate.pdf';
-                        console.log(`Fallback used single ZIP entry: ${attachmentName} for ${recipient.email}`);
+                      if (matchingEntry) {
+                        attachmentData = matchingEntry.getData();
+                        attachmentName = matchingEntry.entryName.split('/').pop() || `${certId}.pdf`;
+                        console.log(`Found certificate attachment: ${attachmentName} for ${recipient.email}`);
+                      } else {
+                        console.warn(`No matching certificate in ZIP for ID: ${certId}`);
+                        // Fallback: If there is exactly one file in the ZIP, use it as fallback!
+                        const pdfEntries = zipEntries.filter(entry => !entry.isDirectory && entry.entryName.toLowerCase().endsWith('.pdf'));
+                        const fallbackEntry = pdfEntries.length === 1 ? pdfEntries[0] : (zipEntries.filter(entry => !entry.isDirectory).length === 1 ? zipEntries.filter(entry => !entry.isDirectory)[0] : null);
+                        if (fallbackEntry) {
+                          attachmentData = fallbackEntry.getData();
+                          attachmentName = fallbackEntry.entryName.split('/').pop() || 'certificate.pdf';
+                          console.log(`Fallback used single ZIP entry: ${attachmentName} for ${recipient.email}`);
+                        }
                       }
                     }
-                  }                  // Build RFC 2822 raw email
+                  }
+
+                  // Build RFC 2822 raw email with proper MIME structure
                   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                  const relatedBoundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}_rel`;
+                  const htmlBodyLines = formattedHtmlBody.split('\n').map(line => line.replace(/\r+$/, ''));
                   const emailParts = [
                     `From: ${fromStr}`,
                     `To: ${recipient.email}`,
-                    `Subject: ${emailSubject}`,
+                    `Subject: ${personalSubject}`,
                     'MIME-Version: 1.0',
                     `Content-Type: multipart/mixed; boundary="${boundary}"`,
                     '',
                     `--${boundary}`,
+                    `Content-Type: multipart/related; boundary="${relatedBoundary}"`,
+                    '',
+                    `--${relatedBoundary}`,
                     'Content-Type: text/html; charset=UTF-8',
                     'Content-Transfer-Encoding: 8bit',
                     '',
-                    htmlBody,
+                    ...htmlBodyLines,
                     ''
                   ];
+
+                  // Add custom header image inline if header type is custom and custom image is uploaded
+                  if (headerType === 'custom' && headerImageBuffer) {
+                    let imageMime = 'image/jpeg';
+                    if (headerImageName.toLowerCase().endsWith('.png')) {
+                      imageMime = 'image/png';
+                    } else if (headerImageName.toLowerCase().endsWith('.gif')) {
+                      imageMime = 'image/gif';
+                    } else if (headerImageName.toLowerCase().endsWith('.webp')) {
+                      imageMime = 'image/webp';
+                    }
+
+                    emailParts.push(
+                      `--${relatedBoundary}`,
+                      `Content-Type: ${imageMime}; name="${headerImageName || 'header.jpg'}"`,
+                      'Content-Transfer-Encoding: base64',
+                      'Content-ID: <headerImage>',
+                      `Content-Disposition: inline; filename="${headerImageName || 'header.jpg'}"`,
+                      '',
+                      headerImageBuffer.toString('base64'),
+                      ''
+                    );
+                  }
+
+                  // Close the related multipart section
+                  emailParts.push(`--${relatedBoundary}--`, '');
 
                   // Add certificate attachment if available
                   if (attachmentData && attachmentName) {
@@ -912,23 +1174,29 @@ async function handler(req, res) {
               const participant = await ParticipantModel.getById(log.participant_id);
 
               // Replace template variables
-              const replacements = {
-                '{{name}}': participant.name,
-                '{{email}}': participant.email,
-                '{{certificate_id}}': participant.certificate_id,
-                ...Object.entries(participant.custom_fields || {}).reduce((acc, [key, val]) => {
-                  acc[`{{${key}}}`] = val;
-                  return acc;
-                }, {})
-              };
-
               let subject = campaign.subject;
               let emailBody = campaign.body;
 
-              for (const [placeholder, value] of Object.entries(replacements)) {
-                subject = subject.replace(new RegExp(placeholder, 'g'), value || '');
-                emailBody = emailBody.replace(new RegExp(placeholder, 'g'), value || '');
-              }
+              const replacePlaceholders = (text, rName, rCertId, rEmail) => {
+                if (!text) return '';
+                let res = text
+                  .replace(/\{\{?\s*name\s*\}?\}/gi, rName || '')
+                  .replace(/\{\{?\s*email\s*\}?\}/gi, rEmail || '')
+                  .replace(/\{\{?\s*(certificateid|certificated|certifiacte_id|certificate_id|certificate\s*id)\s*\}?\}/gi, rCertId || '');
+                
+                // Also support custom fields
+                if (participant.custom_fields) {
+                  for (const [key, val] of Object.entries(participant.custom_fields)) {
+                    const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    res = res.replace(new RegExp(`\\{\\{\\s*${escapedKey}\\s*\\}\\}`, 'gi'), val || '');
+                    res = res.replace(new RegExp(`\\{\\s*${escapedKey}\\s*\\}`, 'gi'), val || '');
+                  }
+                }
+                return res;
+              };
+
+              subject = replacePlaceholders(subject, participant.name, participant.certificate_id, participant.email);
+              emailBody = replacePlaceholders(emailBody, participant.name, participant.certificate_id, participant.email);
 
               // Send email via SMTP
               try {

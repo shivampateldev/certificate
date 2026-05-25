@@ -46,5 +46,17 @@
     "is_active": true,
     "uploaded_at": "2026-05-22T06:17:40.629Z",
     "updated_at": "2026-05-22T06:17:40.629Z"
+  },
+  {
+    "id": "template_1779691704051_hxtxq33",
+    "template_name": "Blank-Certificate-Of-Recognition",
+    "file_path": "C:\\Users\\Admin\\Downloads\\Certificate-Management-Platform\\Certificate-Management-Platform\\storage\\templates\\Blank-Certificate-Of-Recognition.jpg",
+    "file_type": "jpg",
+    "width": 800,
+    "height": 600,
+    "thumbnail_path": null,
+    "is_active": true,
+    "uploaded_at": "2026-05-25T06:48:24.051Z",
+    "updated_at": "2026-05-25T06:48:24.051Z"
   }
 ]

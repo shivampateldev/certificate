@@ -17,6 +17,17 @@ const MassMailer = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  
+  // Customization States
+  const [campaignType, setCampaignType] = useState('certificate'); // 'certificate' or 'reminder'
+  const [headerType, setHeaderType] = useState('none'); // 'none', 'promptwars', 'logos', 'custom'
+  const [colorTheme, setColorTheme] = useState('purple'); // 'purple', 'emerald', 'blue', 'red', 'amber', 'custom'
+  const [customColor, setCustomColor] = useState('#4f46e5');
+  const [backgroundType, setBackgroundType] = useState('light'); // 'light' or 'dark'
+  const [headerTitle, setHeaderTitle] = useState('In-person PromptWars');
+  const [headerSubtitle, setHeaderSubtitle] = useState('Build, pitch & win in one day');
+  const [headerBadge, setHeaderBadge] = useState('Google for Developers | H2S');
+  const [headerImage, setHeaderImage] = useState(null);
 
   useEffect(() => {
     checkAuthStatus();
@@ -98,7 +109,7 @@ const MassMailer = () => {
   const handleSendEmails = async (e) => {
     e.preventDefault();
 
-    if (!selectedTemplateId && !zipFile) {
+    if (campaignType === 'certificate' && !selectedTemplateId && !zipFile) {
       toast.error('Please select a template OR upload a certificate ZIP file');
       return;
     }
@@ -118,12 +129,30 @@ const MassMailer = () => {
 
     try {
       const formData = new FormData();
-      if (zipFile) {
-        formData.append('zipfile', zipFile);
+      formData.append('campaignType', campaignType);
+      formData.append('headerType', headerType);
+      formData.append('colorTheme', colorTheme === 'custom' ? customColor : colorTheme);
+      formData.append('backgroundType', backgroundType);
+
+      if (headerType === 'promptwars') {
+        formData.append('headerTitle', headerTitle);
+        formData.append('headerSubtitle', headerSubtitle);
+        formData.append('headerBadge', headerBadge);
       }
-      if (selectedTemplateId) {
-        formData.append('templateId', selectedTemplateId);
+
+      if (headerType === 'custom' && headerImage) {
+        formData.append('headerImage', headerImage);
       }
+
+      if (campaignType === 'certificate') {
+        if (zipFile) {
+          formData.append('zipfile', zipFile);
+        }
+        if (selectedTemplateId) {
+          formData.append('templateId', selectedTemplateId);
+        }
+      }
+      
       formData.append('csvfile', csvFile);
       formData.append('subject', subject);
       formData.append('body', bodyTemplate);
@@ -238,66 +267,122 @@ const MassMailer = () => {
             <form onSubmit={handleSendEmails} className="md-card md-card-content" aria-labelledby="email-form-title">
               <h2 id="email-form-title" className="sr-only">Mass Email Configuration Form</h2>
 
-              {/* Certificate template selector */}
-              <div className="form-group mb-6" style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="template-select" className="form-label font-semibold" style={{ fontWeight: '600' }}>
-                  Certificate Template Selection (Optional - Dynamically draw placeholders)
+              {/* Campaign Type Selector */}
+              <div className="form-group mb-6" style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <label className="form-label font-semibold" style={{ fontWeight: '600', display: 'block', marginBottom: '8px' }}>
+                  Campaign Mode
                 </label>
-                <select
-                  id="template-select"
-                  className="form-control"
-                  value={selectedTemplateId}
-                  onChange={(e) => {
-                    setSelectedTemplateId(e.target.value);
-                    if (e.target.value) {
-                      setZipFile(null); // Clear zip selection if template mode is used
-                    }
-                  }}
-                  aria-describedby="template-select-help"
-                >
-                  <option value="">-- Mode A: Send pre-generated PDFs from ZIP file --</option>
-                  {templates.map(tpl => (
-                    <option key={tpl.id} value={tpl.id}>
-                      Mode B: Generate dynamically using Template: {tpl.template_name} ({tpl.file_type.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-                <div id="template-select-help" className="input-help-text mt-1 text-sm text-secondary" style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#666' }}>
-                  Choose a saved certificate template to automatically generate personalized certificates on the fly. Selecting a template disables and makes the "Certificate ZIP File" upload optional!
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      flex: 1,
+                      backgroundColor: campaignType === 'certificate' ? 'var(--primary)' : '#fff',
+                      color: campaignType === 'certificate' ? '#fff' : 'var(--text-primary)',
+                      border: '1.5px solid',
+                      borderColor: campaignType === 'certificate' ? 'var(--primary)' : '#cbd5e1',
+                      transition: 'all 0.2s ease',
+                      boxShadow: campaignType === 'certificate' ? 'var(--shadow-md)' : 'none'
+                    }}
+                    onClick={() => setCampaignType('certificate')}
+                  >
+                    🎓 Certificate Delivery Campaign
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      flex: 1,
+                      backgroundColor: campaignType === 'reminder' ? 'var(--primary)' : '#fff',
+                      color: campaignType === 'reminder' ? '#fff' : 'var(--text-primary)',
+                      border: '1.5px solid',
+                      borderColor: campaignType === 'reminder' ? 'var(--primary)' : '#cbd5e1',
+                      transition: 'all 0.2s ease',
+                      boxShadow: campaignType === 'reminder' ? 'var(--shadow-md)' : 'none'
+                    }}
+                    onClick={() => setCampaignType('reminder')}
+                  >
+                    🔔 Pure Announcement / Reminder Campaign
+                  </button>
                 </div>
               </div>
+
+              {campaignType === 'certificate' && (
+                <>
+                  {/* Certificate template selector */}
+                  <div className="form-group mb-6" style={{ marginBottom: '1.5rem' }}>
+                    <label htmlFor="template-select" className="form-label font-semibold" style={{ fontWeight: '600' }}>
+                      Certificate Template Selection (Optional - Dynamically draw placeholders)
+                    </label>
+                    <select
+                      id="template-select"
+                      className="form-control"
+                      value={selectedTemplateId}
+                      onChange={(e) => {
+                        setSelectedTemplateId(e.target.value);
+                        if (e.target.value) {
+                          setZipFile(null); // Clear zip selection if template mode is used
+                        }
+                      }}
+                      aria-describedby="template-select-help"
+                    >
+                      <option value="">-- Mode A: Send pre-generated PDFs from ZIP file --</option>
+                      {templates.map(tpl => (
+                        <option key={tpl.id} value={tpl.id}>
+                          Mode B: Generate dynamically using Template: {tpl.template_name} ({tpl.file_type.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                    <div id="template-select-help" className="input-help-text mt-1 text-sm text-secondary" style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#666' }}>
+                      Choose a saved certificate template to automatically generate personalized certificates on the fly. Selecting a template disables and makes the "Certificate ZIP File" upload optional!
+                    </div>
+                  </div>
+                </>
+              )}
 
               <fieldset className="file-uploads grid grid-2">
                 <legend className="sr-only">File Upload Section</legend>
 
-                <div className="form-group">
-                  <label htmlFor="zip-file" className={`form-label ${selectedTemplateId ? 'text-muted' : ''}`} style={{ opacity: selectedTemplateId ? 0.5 : 1 }}>
-                    Certificate ZIP File {selectedTemplateId ? '(Bypassed by Template)' : ''}
-                  </label>
-                  <input
-                    id="zip-file"
-                    type="file"
-                    accept=".zip"
-                    onChange={(e) => setZipFile(e.target.files[0])}
-                    required={!selectedTemplateId}
-                    disabled={!!selectedTemplateId}
-                    className="form-control"
-                    aria-describedby="zip-file-help"
-                    style={{ opacity: selectedTemplateId ? 0.6 : 1 }}
-                  />
-                  <div id="zip-file-help" className="sr-only">
-                    Upload a ZIP file containing all certificate PDFs to be sent via email
-                  </div>
-                  {zipFile && (
-                    <div className="file-success" role="status" aria-live="polite">
-                      ✓ {zipFile.name}
+                {campaignType === 'certificate' ? (
+                  <div className="form-group">
+                    <label htmlFor="zip-file" className={`form-label ${selectedTemplateId ? 'text-muted' : ''}`} style={{ opacity: selectedTemplateId ? 0.5 : 1 }}>
+                      Certificate ZIP File {selectedTemplateId ? '(Bypassed by Template)' : ''}
+                    </label>
+                    <input
+                      id="zip-file"
+                      type="file"
+                      accept=".zip"
+                      onChange={(e) => setZipFile(e.target.files[0])}
+                      required={!selectedTemplateId}
+                      disabled={!!selectedTemplateId}
+                      className="form-control"
+                      aria-describedby="zip-file-help"
+                      style={{ opacity: selectedTemplateId ? 0.6 : 1 }}
+                    />
+                    <div id="zip-file-help" className="sr-only">
+                      Upload a ZIP file containing all certificate PDFs to be sent via email
                     </div>
-                  )}
-                </div>
+                    {zipFile && (
+                      <div className="file-success" role="status" aria-live="polite">
+                        ✓ {zipFile.name}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="form-group" style={{ opacity: 0.5 }}>
+                    <label className="form-label text-muted">
+                      🎓 Certificate Attachments Bypassed
+                    </label>
+                    <div className="form-control" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', color: '#94a3b8' }}>
+                      Reminder mode: No certificates required or attached.
+                    </div>
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label htmlFor="csv-file" className="form-label">
-                    Recipient CSV File
+                    Recipient CSV / Excel File
                   </label>
                   <input
                     id="csv-file"
@@ -318,6 +403,290 @@ const MassMailer = () => {
                   )}
                 </div>
               </fieldset>
+
+              {/* ✨ EMAIL HEADER & THEME DESIGN CUSTOMIZER ✨ */}
+              <div className="theme-customizer-section" style={{ background: '#f8fafc', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', marginTop: '24px', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🎨 Email Header & Theme Customize
+                </h3>
+                
+                <div className="grid grid-2" style={{ gap: '20px', marginBottom: '16px' }}>
+                  <div className="form-group">
+                    <label htmlFor="header-type" className="form-label" style={{ fontWeight: '600' }}>Header Style / Banner</label>
+                    <select id="header-type" className="form-control" value={headerType} onChange={(e) => setHeaderType(e.target.value)}>
+                      <option value="none">None (Plain Styled Email)</option>
+                      <option value="custom">Upload Custom Header Image (PNG, JPEG, JPG)</option>
+                      <option value="promptwars">PromptWars Glowing Banner (Image 2 style)</option>
+                      <option value="logos">Silver Oak & IEEE SB Banner</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="bg-type" className="form-label" style={{ fontWeight: '600' }}>Email Body Style</label>
+                    <select id="bg-type" className="form-control" value={backgroundType} onChange={(e) => setBackgroundType(e.target.value)}>
+                      <option value="light">Classic Light (Clean Card)</option>
+                      <option value="dark">Sleek Dark Mode (Modern Slate)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* PromptWars Header style details config */}
+                {headerType === 'promptwars' && (
+                  <div style={{ background: '#0b0f19', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid #10b981' }}>
+                    <div style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '1px' }}>
+                      PromptWars Banner Settings
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                      <div>
+                        <label className="form-label" style={{ color: '#94a3b8', fontSize: '12px' }}>Header Title</label>
+                        <input type="text" className="form-control" style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff' }} value={headerTitle} onChange={(e) => setHeaderTitle(e.target.value)} placeholder="In-person PromptWars" />
+                      </div>
+                      <div>
+                        <label className="form-label" style={{ color: '#94a3b8', fontSize: '12px' }}>Header Subtitle</label>
+                        <input type="text" className="form-control" style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff' }} value={headerSubtitle} onChange={(e) => setHeaderSubtitle(e.target.value)} placeholder="Build, pitch & win in one day" />
+                      </div>
+                      <div>
+                        <label className="form-label" style={{ color: '#94a3b8', fontSize: '12px' }}>Header Badge Text</label>
+                        <input type="text" className="form-control" style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff' }} value={headerBadge} onChange={(e) => setHeaderBadge(e.target.value)} placeholder="Google for Developers | H2S" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Custom Banner Image upload */}
+                {headerType === 'custom' && (
+                  <div style={{ background: '#f1f5f9', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px dashed #cbd5e1' }}>
+                    <label className="form-label" style={{ fontWeight: '600' }}>Upload Header Banner (PNG, JPEG, JPG)</label>
+                    <input type="file" accept=".png,.jpeg,.jpg" className="form-control" onChange={(e) => setHeaderImage(e.target.files[0])} required={headerType === 'custom'} />
+                    {headerImage && <div style={{ color: '#10b981', fontSize: '12px', marginTop: '8px', fontWeight: '500' }}>✓ Selected: {headerImage.name}</div>}
+                  </div>
+                )}
+                <div style={{ marginTop: '8px' }}>
+                  <label className="form-label" style={{ fontWeight: '600', display: 'block', marginBottom: '12px' }}>
+                    Color Theme Selection
+                  </label>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                    {/* Purple Swatch */}
+                    <button
+                      type="button"
+                      title="Royal Purple"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: '#4f46e5',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: colorTheme === 'purple' ? '0 0 0 2px #fff, 0 0 0 4px #4f46e5' : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: colorTheme === 'purple' ? 'scale(1.1)' : 'scale(1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff'
+                      }}
+                      onClick={() => setColorTheme('purple')}
+                    >
+                      {colorTheme === 'purple' && '✓'}
+                    </button>
+
+                    {/* Emerald Swatch */}
+                    <button
+                      type="button"
+                      title="Glowing Emerald"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: '#10b981',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: colorTheme === 'emerald' ? '0 0 0 2px #fff, 0 0 0 4px #10b981' : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: colorTheme === 'emerald' ? 'scale(1.1)' : 'scale(1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff'
+                      }}
+                      onClick={() => setColorTheme('emerald')}
+                    >
+                      {colorTheme === 'emerald' && '✓'}
+                    </button>
+
+                    {/* Blue Swatch */}
+                    <button
+                      type="button"
+                      title="Ocean Blue"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: '#0284c7',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: colorTheme === 'blue' ? '0 0 0 2px #fff, 0 0 0 4px #0284c7' : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: colorTheme === 'blue' ? 'scale(1.1)' : 'scale(1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff'
+                      }}
+                      onClick={() => setColorTheme('blue')}
+                    >
+                      {colorTheme === 'blue' && '✓'}
+                    </button>
+
+                    {/* Red Swatch */}
+                    <button
+                      type="button"
+                      title="Sunset Red"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ef4444',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: colorTheme === 'red' ? '0 0 0 2px #fff, 0 0 0 4px #ef4444' : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: colorTheme === 'red' ? 'scale(1.1)' : 'scale(1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff'
+                      }}
+                      onClick={() => setColorTheme('red')}
+                    >
+                      {colorTheme === 'red' && '✓'}
+                    </button>
+
+                    {/* Amber Swatch */}
+                    <button
+                      type="button"
+                      title="Golden Amber"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: '#f59e0b',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: colorTheme === 'amber' ? '0 0 0 2px #fff, 0 0 0 4px #f59e0b' : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: colorTheme === 'amber' ? 'scale(1.1)' : 'scale(1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff'
+                      }}
+                      onClick={() => setColorTheme('amber')}
+                    >
+                      {colorTheme === 'amber' && '✓'}
+                    </button>
+
+                    {/* Canva Style Custom Color Swatch */}
+                    <button
+                      type="button"
+                      title="Custom Color Swatch Picker"
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(45deg, #f06, #9f6, #06f)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: colorTheme === 'custom' ? `0 0 0 2px #fff, 0 0 0 4px ${customColor}` : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: colorTheme === 'custom' ? 'scale(1.1)' : 'scale(1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        fontSize: '18px'
+                      }}
+                      onClick={() => setColorTheme('custom')}
+                    >
+                      {colorTheme === 'custom' ? '✓' : '+'}
+                    </button>
+
+                    <div style={{ marginLeft: '8px', fontSize: '14px', color: '#64748b', textTransform: 'capitalize', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        display: 'inline-block',
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: colorTheme === 'custom' ? customColor : (colorTheme === 'purple' ? '#4f46e5' : colorTheme === 'emerald' ? '#10b981' : colorTheme === 'blue' ? '#0284c7' : colorTheme === 'red' ? '#ef4444' : '#f59e0b')
+                      }}></span>
+                      {colorTheme === 'custom' ? `Custom Theme (${customColor})` : `${colorTheme} preset selected`}
+                    </div>
+                  </div>
+
+                  {colorTheme === 'custom' && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      background: '#fff',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      maxWidth: '380px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                    }}>
+                      <div style={{ position: 'relative', width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                        <input
+                          id="custom-color-picker"
+                          type="color"
+                          value={customColor}
+                          onChange={(e) => setCustomColor(e.target.value)}
+                          style={{
+                            position: 'absolute',
+                            width: '200%',
+                            height: '200%',
+                            top: '-50%',
+                            left: '-50%',
+                            cursor: 'pointer',
+                            border: 'none',
+                            outline: 'none',
+                            padding: 0
+                          }}
+                        />
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '2px' }}>HEX Color Code</span>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={customColor}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.startsWith('#') || val.length <= 6) {
+                              setCustomColor(val.startsWith('#') ? val : `#${val}`);
+                            }
+                          }}
+                          placeholder="#00c4cc"
+                          style={{
+                            border: 'none',
+                            padding: '4px 0',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: '#1e293b',
+                            background: 'transparent',
+                            outline: 'none',
+                            height: 'auto',
+                            boxShadow: 'none'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <fieldset className="email-config">
                 <legend className="sr-only">Email Configuration</legend>

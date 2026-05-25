@@ -243,19 +243,17 @@ class SESService {
    * @returns {object} Personalized template
    */
   personalizeTemplate(template, recipient) {
-    const personalizedSubject = template.subject
-      .replace(/{{name}}/g, recipient.name)
-      .replace(/{{certificateId}}/g, recipient.certificateId);
-    
-    const personalizedHtmlBody = template.htmlBody
-      .replace(/{{name}}/g, recipient.name)
-      .replace(/{{certificateId}}/g, recipient.certificateId)
-      .replace(/{{email}}/g, recipient.email);
-    
-    const personalizedTextBody = template.textBody
-      .replace(/{{name}}/g, recipient.name)
-      .replace(/{{certificateId}}/g, recipient.certificateId)
-      .replace(/{{email}}/g, recipient.email);
+    const replacePlaceholders = (text, rName, rCertId, rEmail) => {
+      if (!text) return '';
+      return text
+        .replace(/\{\{?\s*name\s*\}?\}/gi, rName || 'Participant')
+        .replace(/\{\{?\s*email\s*\}?\}/gi, rEmail || '')
+        .replace(/\{\{?\s*(certificateid|certificated|certifiacte_id|certificate_id|certificate\s*id)\s*\}?\}/gi, rCertId || 'N/A');
+    };
+
+    const personalizedSubject = replacePlaceholders(template.subject, recipient.name, recipient.certificateId, recipient.email);
+    const personalizedHtmlBody = replacePlaceholders(template.htmlBody, recipient.name, recipient.certificateId, recipient.email);
+    const personalizedTextBody = replacePlaceholders(template.textBody, recipient.name, recipient.certificateId, recipient.email);
     
     return {
       subject: personalizedSubject,

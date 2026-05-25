@@ -2,6 +2,16 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { Toaster } from 'react-hot-toast';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Users,
+  FileOutput,
+  LayoutTemplate,
+  Mail,
+  BarChart3,
+  Award,
+  Zap
+} from 'lucide-react';
 
 // React Router v7 future flags for early adoption
 const routerFutureFlags = {
@@ -20,12 +30,12 @@ import NotFound from './pages/NotFound';
 import './App.css';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: '⊞' },
-  { path: '/participants', label: 'Participants', icon: '⧇' },
-  { path: '/generate', label: 'Generate', icon: '⧁' },
-  { path: '/templates', label: 'Templates', icon: '⧉' },
-  { path: '/mass-mailer', label: 'Mass Mailer', icon: '⧄' },
-  { path: '/reports', label: 'Reports', icon: '⧠' },
+  { path: '/', label: 'Dashboard', Icon: LayoutDashboard },
+  { path: '/participants', label: 'Participants', Icon: Users },
+  { path: '/generate', label: 'Generate', Icon: FileOutput },
+  { path: '/templates', label: 'Templates', Icon: LayoutTemplate },
+  { path: '/mass-mailer', label: 'Mass Mailer', Icon: Mail },
+  { path: '/reports', label: 'Reports', Icon: BarChart3 },
 ];
 
 const pageTitles = {
@@ -42,32 +52,24 @@ function Sidebar({ open, onClose }) {
   return (
     <>
       <aside className={`sidebar ${open ? 'open' : ''}`}>
-        <Link to="/" className="sidebar-logo" onClick={onClose}>
-          <div className="sidebar-logo-icon">✦</div>
-          <div>
-            <div className="sidebar-logo-text">CertManager</div>
-            <div className="sidebar-logo-sub">Certificate Platform</div>
-          </div>
-        </Link>
-
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" style={{ paddingTop: '24px' }}>
           <div className="sidebar-section-label">Main Menu</div>
-          {navItems.map(item => (
+          {navItems.map(({ path, label, Icon }) => (
             <Link
-              key={item.path}
-              to={item.path}
-              className={`sidebar-link ${location.pathname === item.path ? 'active' : ''}`}
+              key={path}
+              to={path}
+              className={`sidebar-link ${location.pathname === path ? 'active' : ''}`}
               onClick={onClose}
             >
-              <span className="sidebar-link-icon">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="sidebar-link-icon"><Icon size={16} /></span>
+              <span>{label}</span>
             </Link>
           ))}
         </nav>
 
         <div className="sidebar-footer">
           <div className="sidebar-footer-card">
-            <p>Platform v2.0</p>
+            <p><Zap size={12} style={{ display: 'inline', marginRight: 4 }} />Platform v2.0</p>
             <Link to="/generate" className="btn btn-primary btn-sm" style={{ width: '100%' }} onClick={onClose}>
               Generate Now
             </Link>
@@ -83,7 +85,9 @@ function Topbar({ onMenuClick }) {
   return (
     <div className="topbar">
       <div className="topbar-left">
-        <button className="mobile-menu-btn" onClick={onMenuClick} aria-label="Open menu">☰</button>
+        <button className="mobile-menu-btn" onClick={onMenuClick} aria-label="Open menu">
+          <span style={{ fontSize: 20 }}>&#9776;</span>
+        </button>
       </div>
       <div className="topbar-center">
         <img src="/header-banner.png" alt="Silver Oak University & IEEE Logos" className="header-logo-img" />
@@ -117,7 +121,25 @@ function AppLayout() {
         </div>
       </div>
       <footer className="app-footer">
-        <img src="/footer-banner.png" alt="Footer Banner" className="footer-banner-img" />
+        <div className="footer-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="footer-logo-container" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <img src="/footer-banner.png" alt="Footer Banner" className="footer-banner-img" />
+          </div>
+          <div className="footer-bottom-info" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="footer-brand">
+              <Award size={16} color="var(--primary)" />
+              <span>CertManager</span>
+            </div>
+            <div className="footer-divider" />
+            <span className="footer-copy">© {new Date().getFullYear()} Certificate Management Platform. All rights reserved.</span>
+            <div className="footer-divider" />
+            <div className="footer-links">
+              <a href="/" className="footer-link">Dashboard</a>
+              <a href="/generate" className="footer-link">Generate</a>
+              <a href="/reports" className="footer-link">Reports</a>
+            </div>
+          </div>
+        </div>
       </footer>
       <Toaster
         position="top-right"

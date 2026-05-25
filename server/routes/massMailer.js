@@ -462,9 +462,18 @@ router.post('/send', upload.fields([
       const recipient = recipients[i];
       console.log(`Raw recipient data:`, recipient);
 
-      const name = recipient.Name || recipient.name || '';
-      const email = recipient.Mail || recipient.Email || recipient.email || '';
-      const certificateId = recipient['Certificate ID'] || recipient.Certificate_ID || recipient.CertificateID || recipient.certificateId || '';
+      // Typo-tolerant dynamic lookup
+      const findKey = (obj, searchTerms) => {
+        const foundKey = Object.keys(obj).find(k => {
+          const key = k.toLowerCase().replace(/[\s_-]/g, '');
+          return searchTerms.some(term => key.includes(term));
+        });
+        return foundKey ? obj[foundKey] : undefined;
+      };
+
+      const name = findKey(recipient, ['name']) || recipient.Name || recipient.name || '';
+      const email = findKey(recipient, ['email', 'mail']) || recipient.Mail || recipient.Email || recipient.email || '';
+      const certificateId = findKey(recipient, ['certificate', 'certifiacte', 'certid', 'cert']) || recipient['Certificate ID'] || recipient.Certificate_ID || recipient.CertificateID || recipient.certificateId || '';
 
       console.log(`Processing ${i + 1}/${recipients.length}:`);
       console.log(`  Name: "${name}"`);
@@ -499,8 +508,16 @@ router.post('/send', upload.fields([
       }
 
       // Send email
-      const emailBody = body.replace(/{Name}/g, name).replace(/{CertificateID}/g, certificateId);
-      const result = await sendEmailViaGmail(email, subject, emailBody, certPath, senderDisplayName);
+      const replacePlaceholders = (text, rName, rCertId) => {
+        if (!text) return '';
+        return text
+          .replace(/\{\{?\s*name\s*\}?\}/gi, rName || '')
+          .replace(/\{\{?\s*(certificateid|certificated|certifiacte_id|certificate_id|certificate\s*id)\s*\}?\}/gi, rCertId || '');
+      };
+
+      const emailSubject = replacePlaceholders(subject, name, certificateId);
+      const emailBody = replacePlaceholders(body, name, certificateId);
+      const result = await sendEmailViaGmail(email, emailSubject, emailBody, certPath, senderDisplayName);
 
       results.push({
         Sr_No: recipient.Sr_No || recipient.sr_no || '',

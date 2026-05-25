@@ -83,10 +83,16 @@ const CSVParser = {
       );
       const email = emailField ? row[emailField]?.toString().trim().toLowerCase() : '';
 
-      // Find certificate ID field (case-insensitive)
-      const certIdField = Object.keys(row).find(k => 
-        k.toLowerCase().includes('certificate') || k.toLowerCase().includes('cert_id') || k.toLowerCase().includes('certid')
-      );
+      // Find certificate ID field (case-insensitive and typo-tolerant)
+      const certIdField = Object.keys(row).find(k => {
+        const key = k.toLowerCase().replace(/[\s_-]/g, '');
+        return key.includes('certificate') || 
+               key.includes('certifiacte') || 
+               key.includes('certid') || 
+               (key.includes('cert') && key.includes('id')) ||
+               key === 'cert' ||
+               key === 'id';
+      });
       const certificate_id = certIdField ? row[certIdField]?.toString().trim() : `CERT-${Date.now()}-${i}`;
 
       // Collect custom fields
