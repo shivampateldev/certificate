@@ -52,7 +52,15 @@ function Sidebar({ open, onClose }) {
   return (
     <>
       <aside className={`sidebar ${open ? 'open' : ''}`}>
-        <nav className="sidebar-nav" style={{ paddingTop: '24px' }}>
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">C</div>
+          <div>
+            <div className="sidebar-logo-text">CertManager</div>
+            <div className="sidebar-logo-sub">Certificate Platform</div>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
           <div className="sidebar-section-label">Main Menu</div>
           {navItems.map(({ path, label, Icon }) => (
             <Link
@@ -82,17 +90,29 @@ function Sidebar({ open, onClose }) {
 }
 
 function Topbar({ onMenuClick }) {
+  const location = useLocation();
+  const pageTitle = pageTitles[location.pathname] || 'Dashboard';
+
   return (
     <div className="topbar">
       <div className="topbar-left">
         <button className="mobile-menu-btn" onClick={onMenuClick} aria-label="Open menu">
           <span style={{ fontSize: 20 }}>&#9776;</span>
         </button>
+        <div>
+          <div className="topbar-title">CertManager</div>
+          <div className="topbar-badge">v2.0</div>
+        </div>
       </div>
       <div className="topbar-center">
-        <img src="/header-banner.png" alt="Silver Oak University & IEEE Logos" className="header-logo-img" />
+        <div>
+          <div className="topbar-page-title">{pageTitle}</div>
+          <div className="topbar-page-subtitle">Modern certificate workflow and analytics.</div>
+        </div>
       </div>
-      <div className="topbar-right"></div>
+      <div className="topbar-right">
+        <span className="topbar-badge">Live</span>
+      </div>
     </div>
   );
 }
@@ -121,22 +141,21 @@ function AppLayout() {
         </div>
       </div>
       <footer className="app-footer">
-        <div className="footer-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="footer-logo-container" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <img src="/footer-banner.png" alt="Footer Banner" className="footer-banner-img" />
-          </div>
-          <div className="footer-bottom-info" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div className="footer-brand">
-              <Award size={16} color="var(--primary)" />
-              <span>CertManager</span>
+        <div className="footer-banner" role="img" aria-label="Footer banner background">
+          <div className="footer-overlay" />
+          <div className="footer-bottom-info" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', padding: '0 28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="footer-brand">
+                <Award size={20} color="white" />
+                <span style={{ color: 'white', marginLeft: 6 }}>CertManager</span>
+              </div>
+              <div className="footer-divider" style={{ background: 'rgba(255,255,255,0.2)' }} />
+              <span className="footer-copy" style={{ color: 'rgba(255,255,255,0.85)' }}>© {new Date().getFullYear()} Certificate Management Platform. All rights reserved.</span>
             </div>
-            <div className="footer-divider" />
-            <span className="footer-copy">© {new Date().getFullYear()} Certificate Management Platform. All rights reserved.</span>
-            <div className="footer-divider" />
-            <div className="footer-links">
-              <a href="/" className="footer-link">Dashboard</a>
-              <a href="/generate" className="footer-link">Generate</a>
-              <a href="/reports" className="footer-link">Reports</a>
+            <div className="footer-links" style={{ justifyContent: 'flex-end' }}>
+              <a href="/" className="footer-link" style={{ color: 'rgba(255,255,255,0.9)' }}>Dashboard</a>
+              <a href="/generate" className="footer-link" style={{ color: 'rgba(255,255,255,0.9)' }}>Generate</a>
+              <a href="/reports" className="footer-link" style={{ color: 'rgba(255,255,255,0.9)' }}>Reports</a>
             </div>
           </div>
         </div>

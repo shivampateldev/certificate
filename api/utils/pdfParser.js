@@ -1,4 +1,17 @@
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+let pdfjsLib = null;
+try {
+  // preferred server-side build
+  pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+} catch (e1) {
+  try {
+    // fallback to package root (some installs expose main entry)
+    pdfjsLib = require('pdfjs-dist');
+  } catch (e2) {
+    // pdfjs not installed or incompatible in this environment
+    console.warn('pdfjs-dist not available — PDF scanning will be disabled.');
+    pdfjsLib = null;
+  }
+}
 
 const PLACEHOLDER_REGEX = /\{\{\s*([^}]+)\s*\}\}/g;
 
@@ -178,6 +191,7 @@ function determineAlignment(item, pageWidth) {
  */
 async function scanPDFPlaceholders(pdfBuffer) {
   try {
+    if (!pdfjsLib) return [];
     const data = new Uint8Array(pdfBuffer);
     const loadingTask = pdfjsLib.getDocument({ data });
     const pdfDoc = await loadingTask.promise;
