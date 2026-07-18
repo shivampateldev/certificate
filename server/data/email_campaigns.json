@@ -250,5 +250,19 @@
     "status": "completed",
     "created_at": "2026-05-25T06:52:10.985Z",
     "sent_at": "2026-05-25T06:54:22.290Z"
+  },
+  {
+    "id": "campaign_1784351534263_idqtgji",
+    "batch_id": "upload_1784351534263",
+    "generation_id": null,
+    "subject": "Your Certificate",
+    "body": "Dear {Name},\r\n\r\nPlease find attached your certificate.\r\n\r\nBest regards,\r\nThe Team",
+    "sender_email": "smpinfo20@gmail.com",
+    "recipient_count": 55,
+    "sent_count": 55,
+    "failed_count": 0,
+    "status": "completed",
+    "created_at": "2026-07-18T05:12:14.264Z",
+    "sent_at": "2026-07-18T05:16:34.720Z"
   }
 ]
